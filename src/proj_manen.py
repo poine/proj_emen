@@ -5,8 +5,7 @@ import numpy as np, yaml
 import pdb
 
 def _to_eucl(n, h): return n*np.array([np.cos(h), np.sin(h)])
-# a moving actor (target): cst speed, cts heading
-class Actor:
+class Actor: # a moving actor (target): cst speed, cts heading
     def __init__(self, x0, y0, v, psi, name):
         self.name = name
         self.x0, self.y0 = self.p0 = np.array([x0, y0])
@@ -16,7 +15,7 @@ class Actor:
         self.v, self.psi = v, psi
         self.vx, self.vy = self._v = _to_eucl(self.v, psi)
 
-    def get_pos(self, t): return self.p0+t*self._v
+    def get_pos(self, t): return self.p0 + self._v*t
     def get_vel_e(self, t): return self._v
     def get_vel(self, t): return self.v, self.psi
 
@@ -81,18 +80,19 @@ def load_scenario(filename):
     return drone, targets
 
 def make_scenario(ntarg=10, dp0=(0,0), dv=15):
-    
-    
-
+    drone = Drone(dp0, dv, 0)
+    ps = np.random.uniform(low=-20, high=20, size=(ntarg,2))
+    hs = np.random.uniform(low=-np.pi, high=np.pi, size=ntarg)
+    vs = np.random.uniform(low=0.1, high=12, size=ntarg)
+    targets = [Actor(p0[0], p0[1], v, h, _k) for _k, (p0, h, v) in enumerate(zip(ps, hs, vs))]
+    return drone, targets
 
 def main():
+    #drone, targets = make_scenario()
     drone, targets = load_scenario('./scenario_1.yaml')
-    solve(drone, targets)
-    #plot_2d(plt.gca(), drone, targets, 0)
-    #anim = animate(plt.gcf(), plt.gca(), drone, targets, t0=0., t1=10., dt=0.1)
-    #save_animation(anim, '/tmp/anim.mp4', dt=0.1)
-    #plt.show()
-
+    solve_sequence(drone, targets)
+    print(f'duration: {drone.ts[-1]:.2f}s heading: {np.rad2deg(drone.psis[-1]):.1f} deg')
+    
 
 if __name__ == '__main__':
     main()
