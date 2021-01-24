@@ -127,3 +127,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# local testing of documentation
+#
+docs/Gemfile*
+docs/vendor
+docs/.sass-cache
+docs/_site
+*~
+
+
+
