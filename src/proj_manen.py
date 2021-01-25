@@ -48,15 +48,16 @@ class Drone(Actor): # piecewise cst heading
         return self.get_vel_leg(self._idx_leg(t))
     def _idx_leg(self, t): return np.argmax(t<np.asarray(self.ts))-1
     
-def solve_1(_d, _t): # a cos(psi) + b sin(psi) = c
-    delta_p0 = _t.get_pos(_d.ts[-1])-_d.Xs[-1]
-    a, b, c = delta_p0[1]*_d.v, -delta_p0[0]*_d.v, delta_p0[1]*_t.vx-delta_p0[0]*_t.vy
+def solve_1(drone, _t): # a cos(psi) + b sin(psi) = c
+    delta_p0 = _t.get_pos(drone.ts[-1])-drone.Xs[-1]
+    a, b = delta_p0[1]*drone.v, -delta_p0[0]*drone.v
+    c = delta_p0[1]*_t.vx-delta_p0[0]*_t.vy
     psis = 2*np.arctan(np.roots([a+c, -2*b, c-a]))
-    delta_v = _to_eucl(_d.v, psis[0]) - _t._v
+    delta_v = _to_eucl(drone.v, psis[0]) - _t._v
     if np.dot(delta_v, delta_p0) >= 0:
         psi = psis[0]
     else:
-        delta_v = _to_eucl(_d.v, psis[1]) - _t._v
+        delta_v = _to_eucl(drone.v, psis[1]) - _t._v
         psi = psis[1]
     dt = np.linalg.norm(delta_p0)/np.linalg.norm(delta_v)
     return psi, dt

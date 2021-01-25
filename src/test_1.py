@@ -29,7 +29,7 @@ def plot(ax, _d, _t, dt):
 def _check(drone, target, dt):
     pd, pt = drone.get_pos(dt), target.get_pos(dt)
     if not np.allclose(pd, pt):
-        print(f'Failed: {pd} vs {pt}')
+        print(f'##### Failed: {pd} vs {pt}')
     #else:
     #    print(f'success: {pd} vs {pt}')
 
@@ -63,6 +63,20 @@ def test1(idx):
     _check(drone, target, dt)
     plot(plt.gca(), drone, target, dt)
     plt.show()
-    
+
+import time
+def profile(idx=0, nloop=int(1e4)):
+    drone = pm.Drone(p0=[0., 0.], v0=15., h0=0.)
+    x0, y0, v, psi = cases[idx]
+    target = pm.Actor(x0, x0, v, psi, 'target')
+    _start = time.perf_counter()
+    for i in range(nloop): 
+        pm.solve_1(drone, target)
+    _end = time.perf_counter()
+    dt = _end-_start; ips=nloop/dt
+    print(f'{nloop} iterations in {dt:.1f} s, {ips:.0f} iteration/s')
+
+
 test_set()
 #test1(int(sys.argv[1]))#5)
+#profile()
