@@ -31,7 +31,7 @@ MathJax.Hub.Config({
 
 We consider a drone and a set of targets in an euclidian planar environment.
 The targets are moving in a uniform rectilinear motion. The drone is moving at a constant forward velocity with a piecewise constant heading.
-Our goal is to compute an optimal trajectory for the drone, the trajectory leading to the fastest interception of all targets as depicted on figure 0.
+Our goal is to compute an optimal trajectory for the drone, i.e. the trajectory leading to the fastest interception of all targets as depicted on figure 0.
 
 <figure class="cfigure">
   <img src="images/one_sols_scen6.png" alt="Interception examples." width="640">
@@ -42,6 +42,8 @@ Our goal is to compute an optimal trajectory for the drone, the trajectory leadi
 ## 2: Single target
 
 ### 2.1: Derivation
+Here we establish the expression of the heading needed by the drone to intercept a single target.
+
 
 The position of the drone and the target are given by:
 {% comment %}  = \begin{pmatrix}x_{d0}+v_d \cos{\psi_d} t \\ y_{d0}+v_d \sin{\psi_d} t\end{pmatrix} {% endcomment %}
@@ -150,7 +152,7 @@ $$
 t = \frac{|\vect{\delta_{p0}}|}{|\vect{\delta_v}|}
 $$
 
-  * Remark: Existence of a solution
+#### Remark: Existence of a solution
     
 	As long as the forward velocity of the drone is strictly greater than the velocity of the target, a solution exists, by construction (TODO: show it).
 
@@ -158,7 +160,7 @@ $$
 
 The above computation is implemented as follow 
 
-<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Fe4d3f0cccc8c4867c4be77879f55de91295743a5%2Fsrc%2Fproj_manen.py%23L51-L63&style=github&showLineNumbers=on"></script>
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L51-L63&style=github&showLineNumbers=on"></script>
 
 [code](https://github.com/poine/proj_emen/blob/main/src/proj_manen.py)
 
@@ -178,26 +180,37 @@ This [first test](https://github.com/poine/proj_emen/blob/main/src/test_1.py) ru
 ### 3.1 Implementation:
 
 When considering our initial problem, a set of targets, all we need to do is decide the sequence in which the interceptions will proceed.
-With this information in hand we apply our previous computation iteratively to the set of targets as follow
+With this information in hand, we apply our previous computation iteratively to the sequence of targets as follows:
+
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L51-L69&style=github&showLineNumbers=on"></script>
 
 
+We start feeling the need of a way to store and describe scenarios, which we quench in the following way:
+
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L71-L81&style=github&showLineNumbers=on"></script>
+
+
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Fmain%2Fsrc%2Fscenario_2.yaml&style=github&showLineNumbers=on"></script>
+
+We create a [6  targets scenari](https://github.com/poine/proj_emen/blob/main/src/scenario_6.yaml) with increasing headings and intercept them in order. This leads to the spiral like trajectory depicted on figure 2
 
 <figure class="cfigure">
   <img src="images/one_sols_scen6.png" alt="Interception examples." width="640">
-  <figcaption>Fig1. -  Interception examples.</figcaption>
+  <figcaption>Fig2. -  Interception examples with 6 targets.</figcaption>
 </figure>
 <br>
 
-
+We create a [scenari with two targets](https://github.com/poine/proj_emen/blob/main/src/scenario_2.yaml) and test the two possible sequences as depicted on figure 3, one leading to a total time of $$3.08 s$$ and the other $$4.86 s$$
 <figure class="cfigure">
   <img src="images/all_sols_scen2.png" alt="Interception examples." width="640">
-  <figcaption>Fig1. -  Interception examples.</figcaption>
+  <figcaption>Fig3. -  Interception examples with 2 targets.</figcaption>
 </figure>
 <br>
 
+We create a [scenari with three targets](https://github.com/poine/proj_emen/blob/main/src/scenario_3.yaml) and test the six possible sequences as depicted on figure 4. Total times vary between $$8.25s$$ and $$25.08s$$
 <figure class="cfigure">
   <img src="images/all_sols_scen3.png" alt="Interception examples." width="640">
-  <figcaption>Fig1. -  Interception examples.</figcaption>
+  <figcaption>Fig4. -  All sequences on a 3 targets example.</figcaption>
 </figure>
 <br>
 
