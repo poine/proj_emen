@@ -49,12 +49,12 @@ class Drone(Actor): # piecewise cst heading
     def _idx_leg(self, t): return np.argmax(t<np.asarray(self.ts))-1
     
 def solve_1(drone, _t): # a cos(psi) + b sin(psi) = c
-    delta_p0 = _t.get_pos(drone.ts[-1])-drone.Xs[-1]
+    delta_p0 = drone.Xs[-1] - _t.get_pos(drone.ts[-1])
     a, b = delta_p0[1]*drone.v, -delta_p0[0]*drone.v
     c = delta_p0[1]*_t.vx-delta_p0[0]*_t.vy
     psis = 2*np.arctan(np.roots([a+c, -2*b, c-a]))
     delta_v = _to_eucl(drone.v, psis[0]) - _t._v
-    if np.dot(delta_v, delta_p0) >= 0:
+    if np.dot(delta_v, delta_p0) <= 0:
         psi = psis[0]
     else:
         delta_v = _to_eucl(drone.v, psis[1]) - _t._v
@@ -93,7 +93,6 @@ def main():
     drone, targets = load_scenario('./scenario_1.yaml')
     solve_sequence(drone, targets)
     print(f'duration: {drone.ts[-1]:.2f}s heading: {np.rad2deg(drone.psis[-1]):.1f} deg')
-    
 
 if __name__ == '__main__':
     main()

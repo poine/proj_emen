@@ -29,6 +29,15 @@ MathJax.Hub.Config({
 
 ## 1: Introduction
 
+We consider a drone and a set of targets in an euclidian planar environment.
+The targets are moving in a uniform rectilinear motion. The drone is moving at a constant forward velocity with a piecewise constant heading.
+Our goal is to compute an optimal trajectory for the drone, the trajectory leading to the fastest interception of all targets as depicted on figure 0.
+
+<figure class="cfigure">
+  <img src="images/one_sols_scen6.png" alt="Interception examples." width="640">
+  <figcaption>Fig0. -  Drone target interception thingy principle.</figcaption>
+</figure>
+<br>
 
 ## 2: Single target
 
@@ -93,17 +102,22 @@ $$
 
 or 
 
+{% comment %}
 $$
 v_d \delta_{p0x} \cos{\psi_d} - v_d \delta_{p0y} \sin{\psi_d} = v_{tx}\delta_{p0x} - v_{ty}\delta_{p0y} 
 $$
 
 or
+{% endcomment %}
 
 $$\begin{equation}
 a  \cos{\psi_d} + b \sin{\psi_d} = c
 \label{eq:intercept_cond2}
 \end{equation}
 $$
+
+with $$a=v_d \delta_{p0x}$$, $$b=-v_d \delta_{p0y}$$ and $$c=v_{tx}\delta_{p0x} - v_{ty}\delta_{p0y}$$
+
 
 Substituting variable $$\lambda = \tan{\frac{\psi}{2}}$$ ($$\psi=2arctan{\lambda} $$), we get
 
@@ -117,7 +131,7 @@ $$
 (a+c) \lambda^2 -2b \lambda + (c-a) = 0
 $$
 
-which can be solved for its two root $$\lambda_1$$ and $$\lambda_2$$, leading to a pair of headings $$\psi_1$$ and $$\psi_2$$
+which can be solved for its roots $$(\lambda_1, \lambda_2)$$, leading to a pair of headings $$(\psi_1, \psi_2)$$
 
 Condition \eqref{eq:intercept_cond} can now be used once again to select the correct heading by enforcing
 
@@ -127,18 +141,29 @@ $$
 \label{eq:intercept_cond3}
 \end{equation}
 $$
- because $$t$$ is positive.
+
+for $$t$$ positiveness.
+
+$$t$$, the time of interception is then obtained as:
+
+$$
+t = \frac{|\vect{\delta_{p0}}|}{|\vect{\delta_v}|}
+$$
+
+  * Remark: Existence of a solution
+    
+	As long as the forward velocity of the drone is strictly greater than the velocity of the target, a solution exists, by construction (TODO: show it).
 
 ### 2.2: implementation
 
 The above computation is implemented as follow 
 
-<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2F3e149a03fe32268cae30528b071e3b222d285292%2Fsrc%2Fproj_manen.py%23L52-L63&style=github&showBorder=on&showLineNumbers=on"></script>
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Fe4d3f0cccc8c4867c4be77879f55de91295743a5%2Fsrc%2Fproj_manen.py%23L51-L63&style=github&showLineNumbers=on"></script>
 
-[code](https://github.com/poine/proj_emen/blob/3e149a03fe32268cae30528b071e3b222d285292/src/proj_manen.py#L52-L63)
+[code](https://github.com/poine/proj_emen/blob/main/src/proj_manen.py)
 
 
-This [first test](bla) runs our computation on a set of harcoded examples and displays the results as shown on figure 1
+This [first test](https://github.com/poine/proj_emen/blob/main/src/test_1.py) runs our computation on a set of harcoded examples and displays the results as shown on figure 1. It additionally measures that my oldish laptop is able to run this function at 10kHz.
 
 <figure class="cfigure">
   <img src="images/single_interception_examples.png" alt="Interception examples." width="640">
@@ -149,11 +174,12 @@ This [first test](bla) runs our computation on a set of harcoded examples and di
 
 ## 3: Multiple targets
 
-We extends our above behaviour by 
 
+### 3.1 Implementation:
 
+When considering our initial problem, a set of targets, all we need to do is decide the sequence in which the interceptions will proceed.
+With this information in hand we apply our previous computation iteratively to the set of targets as follow
 
-All we have decide is the order in which we deal with the targets
 
 
 <figure class="cfigure">
