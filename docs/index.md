@@ -155,13 +155,12 @@ $$
 
 #### Remark: Existence of a solution
     
-As long as the forward velocity of the drone is strictly greater than the velocity of the target, a solution exists, by construction (TODO: show it).
+As long as the forward velocity of the drone is strictly greater than the velocity of the target, a solution exists, by construction (TODO: show it, or just think about your chances of escaping when being chased by a faster guy...).
 
 ### 2.2: implementation
 
 The above computation is implemented as follow 
-
-<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L51-L63&style=github&showLineNumbers=on"></script>
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff65de3c1e3cd0c73b890d312f9791412f1fad86a%2Fsrc%2Fproj_manen.py%23L51-L63&style=github&showBorder=on&showLineNumbers=on"></script>
 
 [code](https://github.com/poine/proj_emen/blob/main/src/proj_manen.py)
 
@@ -183,8 +182,7 @@ This [first test](https://github.com/poine/proj_emen/blob/main/src/test_1.py) ru
 When considering our initial problem, a set of targets, all we need to do is decide the sequence in which the interceptions will proceed.
 With this information in hand, we apply our previous computation iteratively to the sequence of targets as follows:
 
-<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L51-L69&style=github&showLineNumbers=on"></script>
-
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff65de3c1e3cd0c73b890d312f9791412f1fad86a%2Fsrc%2Fproj_manen.py%23L51-L69&style=github&showBorder=on&showLineNumbers=on"></script>
 
 We start feeling the need of a way to store and describe scenarios, which we quench in the following way:
 
