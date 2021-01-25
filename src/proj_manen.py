@@ -47,14 +47,16 @@ class Drone(Actor): # piecewise cst heading
         if len(self.ts) <= 1: return Actor.get_vel(self, t)
         return self.get_vel_leg(self._idx_leg(t))
     def _idx_leg(self, t): return np.argmax(t<np.asarray(self.ts))-1
+    def flight_duration(self, leg=-1): return self.ts[leg]
     
 def intercept_1(drone, target): # a cos(psi) + b sin(psi) = c
-    delta_p0 = drone.Xs[-1] - target.get_pos(drone.ts[-1])
+    delta_p0 = drone.Xs[-1] - target.get_pos(drone.flight_duration())
     a, b = delta_p0[1]*drone.v, -delta_p0[0]*drone.v
     c = delta_p0[1]*target.vx-delta_p0[0]*target.vy
     psis = 2*np.arctan(np.roots([a+c, -2*b, c-a]))
     delta_v = _to_eucl(drone.v, psis[0]) - target._v
-    if np.dot(delta_v, delta_p0) <= 0:
+    #if len(psis)<2: print('single root??? FIXME')#pdb.set_trace()
+    if np.dot(delta_v, delta_p0) <= 0 or len(psis)<2:
         psi = psis[0]
     else:
         delta_v = _to_eucl(drone.v, psis[1]) - target._v
@@ -68,30 +70,13 @@ def intercept_sequence(drone, targets):
         drone.add_leg(dt, psi)
     return drone.ts[-1]
 
-def load_scenario(filename):
-    with open(filename) as f:
-        _dict = yaml.load(f)
-    targets = []
-    for _k, _args in _dict.items():
-        p0, v, h = _args['p0'], _args['v'], np.deg2rad(_args['h'])
-        if _k.startswith('target'):
-            targets.append(Actor(p0[0], p0[1], v, h, _k))
-        else:
-            drone = Drone(p0, v, h)
-    return drone, targets
-
-def make_scenario(ntarg=10, dp0=(0,0), dv=15):
-    drone = Drone(dp0, dv, 0)
-    ps = np.random.uniform(low=-20, high=20, size=(ntarg,2))
-    hs = np.random.uniform(low=-np.pi, high=np.pi, size=ntarg)
-    vs = np.random.uniform(low=0.1, high=12, size=ntarg)
-    targets = [Actor(p0[0], p0[1], v, h, _k) for _k, (p0, h, v) in enumerate(zip(ps, hs, vs))]
-    return drone, targets
 
 def main():
-    #drone, targets = make_scenario()
-    drone, targets = load_scenario('./scenario_1.yaml')
-    intercept_sequence(drone, targets)
+    drone = Drone(p0=[0., 0.], v0=15., h0=0.)
+    target1 = Actor(5., 5., 10, np.deg2rad(10.), 'target1')
+    intercept_1(drone, target1)
+    target2 = Actor(-5., 5., 10, np.deg2rad(-10.), 'target2')
+    intercept_sequence(drone, [target1, target2])
     print(f'duration: {drone.ts[-1]:.2f}s heading: {np.rad2deg(drone.psis[-1]):.1f} deg')
 
 if __name__ == '__main__':

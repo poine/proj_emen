@@ -10,7 +10,7 @@ from itertools import permutations
 from copy import copy, deepcopy
 import pdb
 
-import proj_manen as pm
+import proj_manen as pm, proj_manen_utils as pmu
 
 def _decorate(ax, _l, _t, _yl, _xl=''): ax.legend(_l); ax.set_title(_t); ax.yaxis.set_label_text(_yl); ax.xaxis.set_label_text(_xl); ax.grid()
 def plot(ax, _d, _targets, plot_targets=True):
@@ -50,7 +50,7 @@ def plot_all_sols(drone, targets, _nc=3):
         drone.clear_traj()
 
 def test_1(filename, rnd=False): # first solution for a given scenario
-    drone, targets = pm.load_scenario(filename)
+    drone, targets = pmu.load_scenario(filename)
     if rnd:
         _p = rng.permutation(len(targets))
         targets = np.array(targets)[_p]
@@ -58,23 +58,23 @@ def test_1(filename, rnd=False): # first solution for a given scenario
     plot(plt.gca(), drone, targets)
 
 def test_2(): # plot all solutions for a 2 targets scenario
-    drone, targets = pm.load_scenario('./scenario_2.yaml')
+    drone, targets = pmu.load_scenario('./scenario_2.yaml')
     plot_all_sols(drone, targets)
     plt.savefig('all_sols_scen2.png')
 
 def test_3(): # plot all solutions for a 3 targets scenario
-    drone, targets = pm.load_scenario('./scenario_3.yaml')
+    drone, targets = pmu.load_scenario('./scenario_3.yaml')
     plot_all_sols(drone, targets)
     plt.savefig('all_sols_scen3.png')
 
 def test_4(): # plot all solutions for a 4 targets scenario
-    drone, targets = pm.load_scenario('./scenario_4.yaml')
+    drone, targets = pmu.load_scenario('./scenario_4.yaml')
     plot_all_sols(drone, targets, _nc=4)
     plt.savefig('all_sols_scen4.png')
 
 def test_5(filename): # compute all solutions, keeps worst and best
-    drone, targets = pm.load_scenario(filename)
-    #drone, targets = pm.make_scenario(ntarg=8, dp0=(0,0), dv=15)
+    #drone, targets = pmu.load_scenario(filename)
+    drone, targets = pmu.make_random_scenario(ntarg=8, dp0=(0,0), dv=15)
     perms = set(permutations(targets))
     durations = []
     best_dur, best_targets, best_drone = float('inf'), None, None
@@ -113,11 +113,11 @@ def test_6(): # plot exhaustive search time vs number of targets
     plt.savefig('ex_search_time_vs_size.png')
     
 #test_1('./scenario_1.yaml')
-test_1('./scenario_6.yaml')
+#test_1('./scenario_6.yaml')
 #plt.savefig('one_sols_scen6.png')
 #test_2()
 #test_3()
 #test_4()
-#test_5('./scenario_6.yaml')
+test_5('./scenario_6.yaml')
 #test_6()
 plt.show()

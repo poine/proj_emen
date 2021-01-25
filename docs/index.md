@@ -34,9 +34,9 @@ The targets are moving in a uniform rectilinear motion. The drone is moving at a
 Our goal is to compute the optimal trajectory for the drone, i.e. the trajectory leading to the fastest interception of all targets as depicted on figure 0.
 
 <figure class="cfigure">
-  <img src="images/one_sols_scen6.png" alt="Interception examples." width="640">
-  <img src="images/animation_1.gif" alt="Interception examples." width="640">
-  <figcaption>Fig0. -  Drone target interception thingy principle.</figcaption>
+  <img src="images/anim_8_targets_fleeing.gif" alt="Interception examples." width="255">
+  <img src="images/anim_8_targets_approaching.gif" alt="Interception examples." width="255">
+  <figcaption>Fig0. -  Drone target interception thingy principle. Let's play sheepdog</figcaption>
 </figure>
 <br>
 
@@ -225,6 +225,17 @@ On random scenario with increasing number of targets, we measure the time for an
 </figure>
 <br>
 
+It becomes increasingly clear that we will not be able to brute-force our way into this problem and that an exhaustive search becomes intractable for number of targets above 8.
+
 ### 3.3: Naïve heuristic
 
+
+We create a naïve heuristic by selecting the target that is closest to the drone at each decision time.
+
+
+<figure class="cfigure">
+  <img src="images/anim_30_targets_heuristic_2.gif" alt="Interception examples." width="640">
+  <figcaption>Fig6. -  Heuristics on 30 targets.</figcaption>
+</figure>
+<br>
 
