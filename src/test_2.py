@@ -1,10 +1,13 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
-
+'''
+  Unit test for interception of a sequence of targets
+'''
 import numpy as np, scipy.optimize, matplotlib.pyplot as plt
 from numpy.random import default_rng
 rng = default_rng()
 from itertools import permutations
+from copy import copy, deepcopy
 import pdb
 
 import proj_manen as pm
@@ -42,7 +45,7 @@ def plot_all_sols(drone, targets, _nc=3):
     axes = fig.subplots(_nr,_nc, sharex=True)#, sharey=True)
     print(f'{len(perms)} permutation')
     for targets, ax in zip(perms, axes.flatten()):
-        pm.solve_sequence(drone, targets)
+        pm.intercept_sequence(drone, targets)
         plot(ax, drone, targets)
         drone.clear_traj()
 
@@ -51,7 +54,7 @@ def test_1(filename, rnd=False): # first solution for a given scenario
     if rnd:
         _p = rng.permutation(len(targets))
         targets = np.array(targets)[_p]
-    pm.solve_sequence(drone, targets)
+    pm.intercept_sequence(drone, targets)
     plot(plt.gca(), drone, targets)
 
 def test_2(): # plot all solutions for a 2 targets scenario
@@ -69,7 +72,6 @@ def test_4(): # plot all solutions for a 4 targets scenario
     plot_all_sols(drone, targets, _nc=4)
     plt.savefig('all_sols_scen4.png')
 
-from copy import copy, deepcopy
 def test_5(filename): # compute all solutions, keeps worst and best
     drone, targets = pm.load_scenario(filename)
     #drone, targets = pm.make_scenario(ntarg=8, dp0=(0,0), dv=15)
@@ -79,7 +81,7 @@ def test_5(filename): # compute all solutions, keeps worst and best
     worst_dur, worst_targets, worst_drone = 0., None, None
     for targets in perms:
         _drone = deepcopy(drone)
-        dur = pm.solve_sequence(_drone, targets)
+        dur = pm.intercept_sequence(_drone, targets)
         durations.append(dur)
         if dur < best_dur:
             best_dur, best_targets, best_drone = dur, targets, _drone
@@ -103,7 +105,7 @@ def test_6(): # plot exhaustive search time vs number of targets
         perms = set(permutations(targets))
         _start = time.perf_counter()
         for targets in perms:
-            pm.solve_sequence(deepcopy(drone), targets)
+            pm.intercept_sequence(deepcopy(drone), targets)
         _end = time.perf_counter();dts.append(_end-_start)
         print(f'{ntarg} targets -> {dts[-1]:.1f} s')
     plt.plot(ntargs, dts, '--o')

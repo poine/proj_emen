@@ -48,7 +48,7 @@ class Drone(Actor): # piecewise cst heading
         return self.get_vel_leg(self._idx_leg(t))
     def _idx_leg(self, t): return np.argmax(t<np.asarray(self.ts))-1
     
-def solve_1(drone, target): # a cos(psi) + b sin(psi) = c
+def intercept_1(drone, target): # a cos(psi) + b sin(psi) = c
     delta_p0 = drone.Xs[-1] - target.get_pos(drone.ts[-1])
     a, b = delta_p0[1]*drone.v, -delta_p0[0]*drone.v
     c = delta_p0[1]*target.vx-delta_p0[0]*target.vy
@@ -62,9 +62,9 @@ def solve_1(drone, target): # a cos(psi) + b sin(psi) = c
     dt = np.linalg.norm(delta_p0)/np.linalg.norm(delta_v)
     return psi, dt
         
-def solve_sequence(drone, targets):
+def intercept_sequence(drone, targets):
     for target in targets:
-        psi, dt = solve_1(drone, target)
+        psi, dt = intercept_1(drone, target)
         drone.add_leg(dt, psi)
     return drone.ts[-1]
 
@@ -91,7 +91,7 @@ def make_scenario(ntarg=10, dp0=(0,0), dv=15):
 def main():
     #drone, targets = make_scenario()
     drone, targets = load_scenario('./scenario_1.yaml')
-    solve_sequence(drone, targets)
+    intercept_sequence(drone, targets)
     print(f'duration: {drone.ts[-1]:.2f}s heading: {np.rad2deg(drone.psis[-1]):.1f} deg')
 
 if __name__ == '__main__':

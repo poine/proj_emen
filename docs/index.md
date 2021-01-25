@@ -35,6 +35,7 @@ Our goal is to compute the optimal trajectory for the drone, i.e. the trajectory
 
 <figure class="cfigure">
   <img src="images/one_sols_scen6.png" alt="Interception examples." width="640">
+  <img src="images/animation_1.gif" alt="Interception examples." width="640">
   <figcaption>Fig0. -  Drone target interception thingy principle.</figcaption>
 </figure>
 <br>

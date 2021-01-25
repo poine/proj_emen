@@ -1,8 +1,10 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
-import sys
-import numpy as np, scipy.optimize, matplotlib.pyplot as plt
-
+'''
+  Unit test for single target interception
+'''
+import sys, time
+import numpy as np, matplotlib.pyplot as plt
 import pdb
 
 import proj_manen as pm
@@ -28,11 +30,7 @@ def plot(ax, _d, _t, dt):
 
 def _check(drone, target, dt):
     pd, pt = drone.get_pos(dt), target.get_pos(dt)
-    if not np.allclose(pd, pt):
-        print(f'##### Failed: {pd} vs {pt}')
-    #else:
-    #    print(f'success: {pd} vs {pt}')
-
+    if not np.allclose(pd, pt): print(f'##### Failed: {pd} vs {pt}')
     
 cases = [
     (5, 5, 10, np.deg2rad(10)), (-5, 5, 10, np.deg2rad(10)), (-5, -5, 10, np.deg2rad(10)), (5, -5, 10, np.deg2rad(10)),
@@ -45,33 +43,31 @@ def test_set(_nc=4):
     for _i, (xc0, xy0, vc, psic) in enumerate(cases):
         drone = pm.Drone(p0=[0., 0.], v0=15., h0=0.)
         target = pm.Actor(xc0, xy0, vc, psic, f'target_{_i}')
-        psi, dt = pm.solve_1(drone, target)
+        psi, dt = pm.intercept_1(drone, target)
         drone.add_leg(dt, psi)
         _check(drone, target, dt)
         plot(axes[np.divmod(_i, _nc)], drone, target, dt)
     plt.savefig('single_interception_examples.png')
     plt.show()
-
     
 def test1(idx):
     drone = pm.Drone(p0=[0., 0.], v0=15., h0=0.)
     #xc0, xy0, vc, psic = 0, 10, 10, np.deg2rad(-90)
     xc0, xy0, vc, psic = cases[idx]
     target = pm.Actor(xc0, xy0, vc, psic, 'target')
-    psi, dt = pm.solve_1(drone, target)
+    psi, dt = pm.intercept_1(drone, target)
     drone.add_leg(dt, psi)
     _check(drone, target, dt)
     plot(plt.gca(), drone, target, dt)
     plt.show()
 
-import time
 def profile(idx=0, nloop=int(1e4)):
     drone = pm.Drone(p0=[0., 0.], v0=15., h0=0.)
     x0, y0, v, psi = cases[idx]
     target = pm.Actor(x0, x0, v, psi, 'target')
     _start = time.perf_counter()
     for i in range(nloop): 
-        pm.solve_1(drone, target)
+        pm.intercept_1(drone, target)
     _end = time.perf_counter()
     dt = _end-_start; ips=nloop/dt
     print(f'{nloop} iterations in {dt:.1f} s, {ips:.0f} iteration/s')
