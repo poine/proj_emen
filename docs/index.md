@@ -31,7 +31,7 @@ MathJax.Hub.Config({
 
 We consider a drone and a set of targets in an euclidian planar environment.
 The targets are moving in a uniform rectilinear motion. The drone is moving at a constant forward velocity with a piecewise constant heading.
-Our goal is to compute an optimal trajectory for the drone, i.e. the trajectory leading to the fastest interception of all targets as depicted on figure 0.
+Our goal is to compute the optimal trajectory for the drone, i.e. the trajectory leading to the fastest interception of all targets as depicted on figure 0.
 
 <figure class="cfigure">
   <img src="images/one_sols_scen6.png" alt="Interception examples." width="640">
@@ -146,7 +146,7 @@ $$
 
 for $$t$$ positiveness.
 
-$$t$$, the time of interception is then obtained as:
+$$t$$, the time of interception is then obtained from \eqref{eq:intercept_cond} as:
 
 $$
 t = \frac{|\vect{\delta_{p0}}|}{|\vect{\delta_v}|}
@@ -154,7 +154,7 @@ $$
 
 #### Remark: Existence of a solution
     
-	As long as the forward velocity of the drone is strictly greater than the velocity of the target, a solution exists, by construction (TODO: show it).
+As long as the forward velocity of the drone is strictly greater than the velocity of the target, a solution exists, by construction (TODO: show it).
 
 ### 2.2: implementation
 
@@ -165,7 +165,7 @@ The above computation is implemented as follow
 [code](https://github.com/poine/proj_emen/blob/main/src/proj_manen.py)
 
 
-This [first test](https://github.com/poine/proj_emen/blob/main/src/test_1.py) runs our computation on a set of harcoded examples and displays the results as shown on figure 1. It additionally measures that my oldish laptop is able to run this function at 10kHz.
+This [first test](https://github.com/poine/proj_emen/blob/main/src/test_1.py) runs our computation on a set of harcoded examples and displays the results as shown on figure 1. It additionally measures that my circa 2014 laptop is able to run this function at 10kHz.
 
 <figure class="cfigure">
   <img src="images/single_interception_examples.png" alt="Interception examples." width="640">
@@ -177,7 +177,7 @@ This [first test](https://github.com/poine/proj_emen/blob/main/src/test_1.py) ru
 ## 3: Multiple targets
 
 
-### 3.1 Implementation:
+### 3.1: Implementation
 
 When considering our initial problem, a set of targets, all we need to do is decide the sequence in which the interceptions will proceed.
 With this information in hand, we apply our previous computation iteratively to the sequence of targets as follows:
@@ -189,7 +189,7 @@ We start feeling the need of a way to store and describe scenarios, which we que
 
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L71-L81&style=github&showLineNumbers=on"></script>
 
-
+[scenario_2.yaml](https://github.com/poine/proj_emen/blob/main/src/scenario_2.yaml)
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Fmain%2Fsrc%2Fscenario_2.yaml&style=github&showLineNumbers=on"></script>
 
 We create a [6  targets scenari](https://github.com/poine/proj_emen/blob/main/src/scenario_6.yaml) with increasing headings and intercept them in order. This leads to the spiral like trajectory depicted on figure 2
@@ -199,6 +199,8 @@ We create a [6  targets scenari](https://github.com/poine/proj_emen/blob/main/sr
   <figcaption>Fig2. -  Interception examples with 6 targets.</figcaption>
 </figure>
 <br>
+
+### 3.2: Exhaustive search
 
 We create a [scenari with two targets](https://github.com/poine/proj_emen/blob/main/src/scenario_2.yaml) and test the two possible sequences as depicted on figure 3, one leading to a total time of $$3.08 s$$ and the other $$4.86 s$$
 <figure class="cfigure">
@@ -213,4 +215,17 @@ We create a [scenari with three targets](https://github.com/poine/proj_emen/blob
   <figcaption>Fig4. -  All sequences on a 3 targets example.</figcaption>
 </figure>
 <br>
+
+
+On random scenario with increasing number of targets, we measure the time for an exhaustive search:
+
+
+<figure class="cfigure">
+  <img src="images/ex_search_time_vs_size.png" alt="Interception examples." width="640">
+  <figcaption>Fig5. -  Exhaustive search time versus number of targets.</figcaption>
+</figure>
+<br>
+
+### 3.3: Naïve heuristic
+
 

@@ -9,7 +9,7 @@ import pdb
 
 import proj_manen as pm
 
-
+def _decorate(ax, _l, _t, _yl, _xl=''): ax.legend(_l); ax.set_title(_t); ax.yaxis.set_label_text(_yl); ax.xaxis.set_label_text(_xl); ax.grid()
 def plot(ax, _d, _targets, plot_targets=True):
     poses = np.asarray(_d.Xs)
     ax.plot(poses[:,0], poses[:,1], 'o', label=f'drone {_d.v:.1f} m/s')
@@ -70,7 +70,7 @@ def test_4(): # plot all solutions for a 4 targets scenario
     plt.savefig('all_sols_scen4.png')
 
 from copy import copy, deepcopy
-def test_5(filename): # compute all solutions, keeps best
+def test_5(filename): # compute all solutions, keeps worst and best
     drone, targets = pm.load_scenario(filename)
     #drone, targets = pm.make_scenario(ntarg=8, dp0=(0,0), dv=15)
     perms = set(permutations(targets))
@@ -94,7 +94,21 @@ def test_5(filename): # compute all solutions, keeps best
     
     #plt.hist(durations)
     plt.show()
-    
+
+import time
+def test_6(): # plot exhaustive search time vs number of targets
+    ntargs, dts= [2, 3, 4, 5, 6, 7, 8], []
+    for ntarg in ntargs:
+        drone, targets = pm.make_scenario(ntarg=ntarg, dp0=(0,0), dv=15)
+        perms = set(permutations(targets))
+        _start = time.perf_counter()
+        for targets in perms:
+            pm.solve_sequence(deepcopy(drone), targets)
+        _end = time.perf_counter();dts.append(_end-_start)
+        print(f'{ntarg} targets -> {dts[-1]:.1f} s')
+    plt.plot(ntargs, dts, '--o')
+    _decorate(plt.gca(), _l=[''], _t='Search time vs number of targets', _yl='time in s', _xl='number of targets')
+    plt.savefig('ex_search_time_vs_size.png')
     
 #test_1('./scenario_1.yaml')
 test_1('./scenario_6.yaml')
@@ -103,5 +117,5 @@ test_1('./scenario_6.yaml')
 #test_3()
 #test_4()
 #test_5('./scenario_6.yaml')
-
+#test_6()
 plt.show()

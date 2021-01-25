@@ -48,23 +48,23 @@ class Drone(Actor): # piecewise cst heading
         return self.get_vel_leg(self._idx_leg(t))
     def _idx_leg(self, t): return np.argmax(t<np.asarray(self.ts))-1
     
-def solve_1(drone, _t): # a cos(psi) + b sin(psi) = c
-    delta_p0 = drone.Xs[-1] - _t.get_pos(drone.ts[-1])
+def solve_1(drone, target): # a cos(psi) + b sin(psi) = c
+    delta_p0 = drone.Xs[-1] - target.get_pos(drone.ts[-1])
     a, b = delta_p0[1]*drone.v, -delta_p0[0]*drone.v
-    c = delta_p0[1]*_t.vx-delta_p0[0]*_t.vy
+    c = delta_p0[1]*target.vx-delta_p0[0]*target.vy
     psis = 2*np.arctan(np.roots([a+c, -2*b, c-a]))
-    delta_v = _to_eucl(drone.v, psis[0]) - _t._v
+    delta_v = _to_eucl(drone.v, psis[0]) - target._v
     if np.dot(delta_v, delta_p0) <= 0:
         psi = psis[0]
     else:
-        delta_v = _to_eucl(drone.v, psis[1]) - _t._v
+        delta_v = _to_eucl(drone.v, psis[1]) - target._v
         psi = psis[1]
     dt = np.linalg.norm(delta_p0)/np.linalg.norm(delta_v)
     return psi, dt
         
 def solve_sequence(drone, targets):
-    for _targ in targets:
-        psi, dt = solve_1(drone, _targ)
+    for target in targets:
+        psi, dt = solve_1(drone, target)
         drone.add_leg(dt, psi)
     return drone.ts[-1]
 
