@@ -239,3 +239,11 @@ We create a naïve heuristic by selecting the target that is closest to the dron
 </figure>
 <br>
 
+As it seems to perform moderatly well on the large 30 targets example we throw at it, we seek to gain a quantitative evalution of its performances. We define a set of 7 targets scenarios
+
+<figure class="cfigure">
+  <img src="images/histo_scens_7.png" alt="histograms of 7 targets scenarios." width="640">
+  <figcaption>Fig7. -  histograms of 7 targets scenarios.</figcaption>
+</figure>
+<br>
+

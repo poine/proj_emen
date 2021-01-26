@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import numpy as np, yaml
+import numpy as np, yaml, itertools, copy
 import pdb
 
 def _to_eucl(n, h): return n*np.array([np.cos(h), np.sin(h)])
@@ -70,6 +70,41 @@ def intercept_sequence(drone, targets):
         drone.add_leg(dt, psi)
     return drone.ts[-1]
 
+class TimeExceededException(Exception):
+    pass
+def intercept_sequence_if_shorter(drone, targets, max_t):
+    for target in targets:
+        psi, dt = intercept_1(drone, target)
+        drone.add_leg(dt, psi)
+        if drone.flight_duration() >= max_t: raise TimeExceededException
+    return drone.ts[-1]
+
+#import sortedcontainers  ... I'd want something like that...
+def search_exhaustive(drone, targets, keep_all=False):
+    perms = set(itertools.permutations(targets))
+    print(f'exhaustive search for {len(targets)} targets ({len(perms)} sequences)')
+    best_dur, best_drone, best_targets, all_drones, all_targets= float('inf'), None, None, [],[]
+    for targets in perms:
+        _drone = copy.deepcopy(drone)
+        dur = intercept_sequence(_drone, targets)
+        if dur < best_dur:
+            best_dur, best_drone, best_targets = dur, _drone, targets
+        if keep_all:
+            all_drones.append(_drone); all_targets.append(targets)
+    return (all_drones, all_targets) if keep_all else (best_drone, best_targets)
+
+def search_exhaustive_with_threshold(drone, targets, max_dur):
+    perms = set(itertools.permutations(targets))
+    print(f'thresholded search for {len(targets)} targets ({len(perms)} sequences)')
+    best_dur, best_drone, best_targets = max_dur, None, None
+    for targets in perms:
+        _drone = copy.deepcopy(drone)
+        try:
+            dur = intercept_sequence_if_shorter(_drone, targets, best_dur)
+            if dur < best_dur:
+                best_dur, best_drone, best_targets = dur, _drone, targets
+        except TimeExceededException: pass
+    return best_drone, best_targets
 
 def main():
     drone = Drone(p0=[0., 0.], v0=15., h0=0.)
