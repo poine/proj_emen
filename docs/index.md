@@ -246,6 +246,7 @@ We create a naïve heuristic by selecting the target that is closest to the dron
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2F424323787aac42daf5e625b45554e1dcdaf81729%2Fsrc%2Ftest_3.py%23L11-L20&style=github&showBorder=on&showLineNumbers=on"></script>
 
 
+We test our heuristic on a 30 targets scenario (for which we are curently unable to compute the optimal)
 <figure class="cfigure">
   <img src="images/anim_30_targets_heuristic_2.gif" alt="Interception examples." width="640">
   <figcaption>Fig6. -  Heuristics on 30 targets.</figcaption>
@@ -274,6 +275,7 @@ We use our heuristic to improve the exhaustive search by throwing away solutions
 
 In order to try and improve the solution given by out heuristic, we implement a local search :
 
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2F37b1d274f75cafd08f92b6953a7f97f00934746b%2Fsrc%2Ftest_4.py%23L13-L25&style=github&showBorder=on&showLineNumbers=on"></script>
 
 We apply the local search to a 7 targets scenario, in which the optimal is dicovered.
 ```
