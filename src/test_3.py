@@ -14,8 +14,8 @@ def search_heuristic_closest(drone, targets):
     while len(remaining) > 0:
         now = drone.flight_duration()
         rel_tpos = [_targ.get_pos(now)-drone.get_pos(now) for _targ in remaining]
-        target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
-        remaining.remove(target);solution.append(target)
+        closest_target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
+        remaining.remove(closest_target);solution.append(closest_target)
         psi, dt = pm.intercept_1(drone, target)
         drone.add_leg(dt, psi)
     return drone, solution

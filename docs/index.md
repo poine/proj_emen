@@ -26,6 +26,7 @@ MathJax.Hub.Config({
 </script>
 
 
+
 ## 1: Introduction
 
 We consider a drone and a set of targets in an euclidian planar environment.
@@ -152,7 +153,7 @@ $$
 t = \frac{|\vect{\delta_{p0}}|}{|\vect{\delta_v}|}
 $$
 
-#### Remark: Existence of a solution
+#### Existence of a solution
     
 As long as the forward velocity of the drone is strictly greater than the velocity of the target, a solution exists, by construction (TODO: show it, or just think about your chances of escaping when being chased by a faster guy...).
 
@@ -183,18 +184,20 @@ With this information in hand, we apply our previous computation iteratively to 
 
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff65de3c1e3cd0c73b890d312f9791412f1fad86a%2Fsrc%2Fproj_manen.py%23L51-L69&style=github&showBorder=on&showLineNumbers=on"></script>
 
-We start feeling the need of a way to store and describe scenarios, which we quench in the following way:
-<!-- --------------------------------------------------------------------------------------------------- -->
-<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#corr1">Show details</button>
-<div id="corr1" class="collapse" markdown="1">
 
+We start feeling the need of a way to store and describe scenarios, which we quench in the following way:
+<details markdown="1">
+  <summary>Click for details</summary>
+  
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L71-L81&style=github&showLineNumbers=on"></script>
 
 [scenario_2.yaml](https://github.com/poine/proj_emen/blob/main/src/scenario_2.yaml)
+
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Fmain%2Fsrc%2Fscenario_2.yaml&style=github&showLineNumbers=on"></script>
 
-</div>
+</details>
 <!-- --------------------------------------------------------------------------------------------------- -->
+<br>
 
 
 We create a [6  targets scenari](https://github.com/poine/proj_emen/blob/main/src/scenario_6.yaml) with increasing headings and intercept them in order. This leads to the spiral like trajectory depicted on figure 2
@@ -278,6 +281,9 @@ In order to try and improve the solution given by out heuristic, we implement a 
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2F37b1d274f75cafd08f92b6953a7f97f00934746b%2Fsrc%2Ftest_4.py%23L13-L25&style=github&showBorder=on&showLineNumbers=on"></script>
 
 We apply the local search to a 7 targets scenario, in which the optimal is dicovered.
+<details markdown="1">
+  <summary>Click for details</summary>
+
 ```
 loading scenario from file: scenario_7_2.yaml
 heuristic closest target
@@ -295,8 +301,13 @@ local search
 optimal
  18.51 ['6', '7', '1', '2', '4', '3', '5']
 ```
+</details><br>
+<!-- --------------------------------------------------------------------------------------------------- -->
 
-We apply the local search to a 10 targets scenario. We improve the heuristic solution but fail to discover the optimal.
+We apply the local search to a 10 targets scenario. We improve the heuristic solution but fail to discover the optimal. Flight time is reduced from 78.55s to 50.11s
+<details markdown="1">
+  <summary>Click for details</summary>
+
 ```
 loading scenario from file: scenario_10_1.yaml
 heuristic closest target
@@ -310,8 +321,15 @@ local search
 optimal
  50.11 ['2', '10', '9', '5', '8', '6', '3', '7', '1', '4']
 ```
+</details><br>
+<!-- --------------------------------------------------------------------------------------------------- -->
 
-We apply the local search to a 30 targets scenario (unknown optimal)
+
+We apply the local search to a 30 targets scenario (unknown optimal). Flight time is reduced from 169.86s to 97.06s
+
+<details markdown="1">
+  <summary>Click for details</summary>
+
 ```
 loading scenario from file: scenario_30_1.yaml
 heuristic closest target
@@ -346,3 +364,6 @@ local search
  97.15 ['1', '30', '3', '4', '5', '7', '29', '11', '9', '6', '8', '10', '22', '12', '27', '28', '20', '19', '2', '18', '15', '14', '13', '17', '16', '23', '25', '24', '21', '26']
  97.06 ['1', '30', '3', '4', '5', '7', '29', '11', '9', '6', '8', '10', '22', '12', '27', '28', '20', '19', '18', '2', '15', '14', '13', '17', '16', '23', '25', '24', '21', '26']
  ```
+</details><br>
+<!-- --------------------------------------------------------------------------------------------------- -->
+
