@@ -70,6 +70,10 @@ def intercept_sequence(drone, targets):
         drone.add_leg(dt, psi)
     return drone.ts[-1]
 
+def intercept_sequence_copy(drone, targets):
+    drone = copy.deepcopy(drone)
+    return drone, intercept_sequence(drone, targets)
+
 class TimeExceededException(Exception):
     pass
 def intercept_sequence_if_shorter(drone, targets, max_t):
@@ -95,7 +99,7 @@ def search_exhaustive(drone, targets, keep_all=False):
 
 def search_exhaustive_with_threshold(drone, targets, max_dur):
     perms = set(itertools.permutations(targets))
-    print(f'thresholded search for {len(targets)} targets ({len(perms)} sequences)')
+    print(f'thresholded search for {len(targets)} targets ({len(perms)} sequences, threshold {max_dur:.1f}s)')
     best_dur, best_drone, best_targets = max_dur, None, None
     for targets in perms:
         _drone = copy.deepcopy(drone)

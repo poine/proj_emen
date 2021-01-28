@@ -26,7 +26,6 @@ MathJax.Hub.Config({
 </script>
 
 
-
 ## 1: Introduction
 
 We consider a drone and a set of targets in an euclidian planar environment.
@@ -179,17 +178,24 @@ This [first test](https://github.com/poine/proj_emen/blob/main/src/test_1.py) ru
 
 ### 3.1: Implementation
 
-When considering our initial problem, a set of targets, all we need to do is decide the sequence in which the interceptions will proceed.
+When considering our initial problem, a set of targets, all that is left to do is to decide the sequence in which the interceptions will proceed.
 With this information in hand, we apply our previous computation iteratively to the sequence of targets as follows:
 
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff65de3c1e3cd0c73b890d312f9791412f1fad86a%2Fsrc%2Fproj_manen.py%23L51-L69&style=github&showBorder=on&showLineNumbers=on"></script>
 
 We start feeling the need of a way to store and describe scenarios, which we quench in the following way:
+<!-- --------------------------------------------------------------------------------------------------- -->
+<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#corr1">Show details</button>
+<div id="corr1" class="collapse" markdown="1">
 
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Ff9548a51450f6b4e163f28c710f764240a8b81ec%2Fsrc%2Fproj_manen.py%23L71-L81&style=github&showLineNumbers=on"></script>
 
 [scenario_2.yaml](https://github.com/poine/proj_emen/blob/main/src/scenario_2.yaml)
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2Fmain%2Fsrc%2Fscenario_2.yaml&style=github&showLineNumbers=on"></script>
+
+</div>
+<!-- --------------------------------------------------------------------------------------------------- -->
+
 
 We create a [6  targets scenari](https://github.com/poine/proj_emen/blob/main/src/scenario_6.yaml) with increasing headings and intercept them in order. This leads to the spiral like trajectory depicted on figure 2
 
@@ -200,6 +206,11 @@ We create a [6  targets scenari](https://github.com/poine/proj_emen/blob/main/sr
 <br>
 
 ### 3.2: Exhaustive search
+
+
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2F424323787aac42daf5e625b45554e1dcdaf81729%2Fsrc%2Fproj_manen.py%23L83-L94&style=github&showBorder=on&showLineNumbers=on"></script>
+
+
 
 We create a [scenari with two targets](https://github.com/poine/proj_emen/blob/main/src/scenario_2.yaml) and test the two possible sequences as depicted on figure 3, one leading to a total time of $$3.08 s$$ and the other $$4.86 s$$
 <figure class="cfigure">
@@ -232,6 +243,8 @@ It becomes increasingly clear that we will not be able to brute-force our way in
 
 We create a naïve heuristic by selecting the target that is closest to the drone at each decision time.
 
+<script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2F424323787aac42daf5e625b45554e1dcdaf81729%2Fsrc%2Ftest_3.py%23L11-L20&style=github&showBorder=on&showLineNumbers=on"></script>
+
 
 <figure class="cfigure">
   <img src="images/anim_30_targets_heuristic_2.gif" alt="Interception examples." width="640">
@@ -239,11 +252,95 @@ We create a naïve heuristic by selecting the target that is closest to the dron
 </figure>
 <br>
 
-As it seems to perform moderatly well on the large 30 targets example we throw at it, we seek to gain a quantitative evalution of its performances. We define a set of 7 targets scenarios
+As it seems to perform moderatly well on the large 30 targets example we throw at it, we seek to gain a quantitative evalution of its performances. We define a set of 7 targets scenarios and perform an exhaustive search on each of them. Results are summarized in fig 7
 
 <figure class="cfigure">
-  <img src="images/histo_scens_7.png" alt="histograms of 7 targets scenarios." width="640">
+  <img src="images/anim_7_targets_overview.gif" alt="histograms of 7 targets scenarios." width="640">
   <figcaption>Fig7. -  histograms of 7 targets scenarios.</figcaption>
 </figure>
 <br>
 
+We use our heuristic to improve the exhaustive search by throwing away solutions that are worse than our heuristic. (The improvement is less dramatic than I had hoped for, might be due to the implementation using python exceptions...)
+
+<figure class="cfigure">
+  <img src="images/ex_search_time_vs_size_2.png" alt="Improved exhaustive search." width="640">
+  <figcaption>Fig8. -  Improved exhaustive search.</figcaption>
+</figure>
+<br>
+
+
+### 3.4: Local refinement
+
+
+In order to try and improve the solution given by out heuristic, we implement a local search :
+
+
+We apply the local search to a 7 targets scenario, in which the optimal is dicovered.
+```
+loading scenario from file: scenario_7_2.yaml
+heuristic closest target
+ 23.36 ['1', '2', '3', '4', '5', '6', '7']
+local search
+ 23.19 ['1', '2', '4', '5', '6', '3', '7']
+ 21.66 ['7', '1', '2', '4', '5', '6', '3']
+ 20.93 ['7', '1', '2', '4', '5', '3', '6']
+ 20.84 ['7', '1', '2', '5', '4', '3', '6']
+ 20.12 ['6', '7', '1', '2', '5', '4', '3']
+ 19.10 ['6', '7', '1', '2', '5', '3', '4']
+ 18.78 ['6', '7', '1', '2', '4', '5', '3']
+ 18.75 ['6', '7', '1', '2', '3', '4', '5']
+ 18.51 ['6', '7', '1', '2', '4', '3', '5']
+optimal
+ 18.51 ['6', '7', '1', '2', '4', '3', '5']
+```
+
+We apply the local search to a 10 targets scenario. We improve the heuristic solution but fail to discover the optimal.
+```
+loading scenario from file: scenario_10_1.yaml
+heuristic closest target
+ 78.55 ['10', '2', '7', '9', '1', '4', '5', '6', '3', '8']
+local search
+ 74.42 ['10', '7', '9', '1', '4', '5', '6', '3', '8', '2']
+ 70.35 ['10', '7', '9', '4', '1', '5', '6', '3', '8', '2']
+ 66.97 ['10', '7', '9', '4', '1', '5', '3', '6', '8', '2']
+ 63.44 ['2', '10', '7', '9', '4', '1', '5', '3', '6', '8']
+ 58.58 ['2', '10', '9', '4', '1', '7', '5', '3', '6', '8']
+optimal
+ 50.11 ['2', '10', '9', '5', '8', '6', '3', '7', '1', '4']
+```
+
+We apply the local search to a 30 targets scenario (unknown optimal)
+```
+loading scenario from file: scenario_30_1.yaml
+heuristic closest target
+169.86 ['2', '3', '4', '5', '29', '7', '6', '9', '11', '13', '8', '16', '10', '22', '12', '21', '1', '27', '26', '28', '24', '20', '19', '18', '17', '15', '14', '23', '25', '30']
+local search
+168.21 ['2', '3', '4', '5', '29', '7', '6', '9', '11', '13', '8', '16', '22', '12', '21', '1', '27', '10', '26', '28', '24', '20', '19', '18', '17', '15', '14', '23', '25', '30']
+163.72 ['2', '3', '4', '5', '29', '7', '6', '9', '11', '13', '8', '16', '22', '12', '1', '27', '10', '26', '28', '24', '20', '19', '18', '17', '15', '14', '23', '25', '30', '21']
+163.09 ['2', '3', '4', '5', '29', '7', '6', '9', '11', '13', '8', '22', '12', '1', '27', '10', '26', '28', '24', '20', '19', '18', '17', '15', '14', '16', '23', '25', '30', '21']
+160.90 ['3', '4', '5', '29', '7', '6', '9', '11', '13', '8', '22', '12', '1', '27', '10', '26', '28', '24', '20', '2', '19', '18', '17', '15', '14', '16', '23', '25', '30', '21']
+159.35 ['3', '4', '5', '29', '7', '6', '9', '11', '13', '8', '22', '12', '1', '27', '10', '26', '28', '24', '20', '19', '2', '18', '17', '15', '14', '16', '23', '25', '30', '21']
+141.62 ['3', '4', '5', '29', '7', '6', '9', '11', '13', '8', '22', '12', '1', '27', '10', '28', '24', '20', '19', '2', '18', '17', '15', '14', '16', '23', '25', '30', '21', '26']
+137.54 ['3', '4', '5', '29', '7', '11', '6', '9', '13', '8', '22', '12', '1', '27', '10', '28', '24', '20', '19', '2', '18', '17', '15', '14', '16', '23', '25', '30', '21', '26']
+131.35 ['3', '4', '5', '29', '7', '11', '6', '9', '13', '8', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '15', '14', '16', '23', '25', '30', '21', '26']
+130.22 ['3', '4', '5', '29', '7', '11', '6', '9', '8', '13', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '15', '14', '16', '23', '25', '30', '21', '26']
+129.93 ['3', '4', '5', '29', '7', '11', '6', '9', '8', '13', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '14', '15', '16', '23', '25', '30', '21', '26']
+129.73 ['3', '4', '5', '29', '7', '11', '6', '9', '8', '13', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '14', '15', '16', '23', '25', '21', '26', '30']
+127.89 ['30', '3', '4', '5', '29', '7', '11', '6', '9', '8', '13', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '14', '15', '16', '23', '25', '21', '26']
+119.82 ['30', '3', '4', '5', '29', '7', '11', '9', '8', '6', '13', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '14', '15', '16', '23', '25', '21', '26']
+118.13 ['30', '3', '4', '5', '29', '7', '11', '9', '6', '13', '8', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '14', '15', '16', '23', '25', '21', '26']
+118.11 ['30', '3', '4', '5', '7', '29', '11', '9', '6', '13', '8', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '14', '15', '16', '23', '25', '21', '26']
+116.94 ['30', '3', '4', '5', '7', '29', '11', '9', '6', '13', '8', '16', '22', '27', '12', '1', '10', '28', '24', '20', '19', '2', '18', '17', '14', '15', '23', '25', '21', '26']
+114.82 ['30', '3', '4', '5', '7', '29', '11', '9', '6', '13', '8', '16', '22', '27', '12', '1', '10', '28', '20', '19', '2', '18', '17', '14', '15', '23', '25', '24', '21', '26']
+114.75 ['30', '4', '5', '7', '29', '11', '9', '6', '13', '8', '16', '22', '27', '12', '1', '10', '28', '3', '20', '19', '2', '18', '17', '14', '15', '23', '25', '24', '21', '26']
+107.58 ['30', '4', '5', '7', '29', '11', '9', '6', '13', '8', '16', '22', '27', '12', '1', '10', '28', '3', '20', '19', '2', '18', '14', '15', '17', '23', '25', '24', '21', '26']
+107.42 ['30', '4', '5', '7', '29', '11', '9', '6', '8', '13', '16', '22', '27', '12', '1', '10', '28', '3', '20', '19', '2', '18', '14', '15', '17', '23', '25', '24', '21', '26']
+105.82 ['30', '4', '5', '7', '29', '11', '9', '6', '8', '16', '22', '27', '12', '1', '10', '28', '3', '20', '19', '2', '18', '14', '15', '13', '17', '23', '25', '24', '21', '26']
+105.53 ['1', '30', '4', '5', '7', '29', '11', '9', '6', '8', '16', '22', '27', '12', '10', '28', '3', '20', '19', '2', '18', '14', '15', '13', '17', '23', '25', '24', '21', '26']
+105.27 ['1', '30', '4', '5', '7', '29', '11', '9', '6', '8', '22', '27', '12', '10', '28', '3', '20', '19', '2', '18', '14', '15', '13', '17', '16', '23', '25', '24', '21', '26']
+105.06 ['1', '30', '4', '5', '7', '29', '11', '9', '6', '8', '22', '27', '12', '10', '28', '3', '20', '19', '2', '18', '15', '14', '13', '17', '16', '23', '25', '24', '21', '26']
+103.11 ['1', '30', '4', '5', '7', '29', '11', '9', '6', '8', '22', '12', '27', '10', '28', '3', '20', '19', '2', '18', '15', '14', '13', '17', '16', '23', '25', '24', '21', '26']
+ 97.80 ['1', '30', '4', '5', '7', '29', '11', '9', '6', '8', '10', '22', '12', '27', '28', '3', '20', '19', '2', '18', '15', '14', '13', '17', '16', '23', '25', '24', '21', '26']
+ 97.15 ['1', '30', '3', '4', '5', '7', '29', '11', '9', '6', '8', '10', '22', '12', '27', '28', '20', '19', '2', '18', '15', '14', '13', '17', '16', '23', '25', '24', '21', '26']
+ 97.06 ['1', '30', '3', '4', '5', '7', '29', '11', '9', '6', '8', '10', '22', '12', '27', '28', '20', '19', '18', '2', '15', '14', '13', '17', '16', '23', '25', '24', '21', '26']
+ ```

@@ -14,8 +14,6 @@ def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xli
 
     _status_fmts = [f'Time: {{:04.1f}} / {_d.flight_duration():.1f} s   Targets: {{}} / {len(_t)}' for _d, _t in zip(drones, targets)]
     _status_texts = [_ax.text(0.025, 0.92, '', transform=_ax.transAxes) for _ax in axes]
-    _circle_drones = [plt.Circle((0, 0), 2., color='C3', fill=False, zorder=1) for _d in drones]
-    _line_drones = [_ax.add_artist(_c) for _ax, _c in zip(axes, _circle_drones)]
     _circle_targets = []
     for _ts in targets:
         _circle_targets.append([plt.Circle((_t.x0, _t.y0), 2., color='C1', fill=True, zorder=1)  for _t in _ts])
@@ -23,28 +21,32 @@ def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xli
     for _ax, _ct in zip(axes, _circle_targets):
         _line_targets.append([_ax.add_artist(_c) for _c in _ct])
     _line_targets = np.array(_line_targets).flatten().tolist()
+    _circle_drones = [plt.Circle((0, 0), 2., color='C3', fill=False, zorder=1) for _d in drones]
+    _line_drones = [_ax.add_artist(_c) for _ax, _c in zip(axes, _circle_drones)]
     #pdb.set_trace()
         
     for _ax, _name in zip(axes, names):
         _ax.set_xlim(*xlim); _ax.set_ylim(*ylim); _ax.grid(); _ax.set_title(_name); _ax.axis('equal')
 
     def _init():
-        for _c in np.array(_circle_targets).flatten().tolist():
+        for _c in np.array(_circle_targets).flatten().tolist(): # set all targets active
             _c.set_edgecolor('C1'); _c.set_facecolor('C1')
         return _line_drones + _line_targets
 
     def _animate(i):
         t = t0 + i * dt
         for _d, _ts, _s, _sf, _c, _cts in zip(drones, targets, _status_texts, _status_fmts, _circle_drones, _circle_targets):
-            idx_leg = _d._idx_leg(t)
-            _s.set_text(_sf.format(t, idx_leg))
-            if t <= _d.flight_duration():
+            idx_leg = _d._idx_leg(t)%len(_d.ts)
+            #if idx_leg < 0: idx_leg += len(_d.ts)
+            if t <= _d.flight_duration() +0.1:
+                _s.set_text(_sf.format(t, idx_leg))
                 _c.center = _d.get_pos(t)
-                for _k, (_t, _ct) in enumerate(zip(_ts, _cts)):
+                for _k, (_t, _ct) in enumerate(zip(_ts, _cts)): # for all targets
                     if _k<idx_leg:
-                        _ct.set_edgecolor('C2'); _ct.set_facecolor('C2')
+                        _ct.set_edgecolor('C2'); _ct.set_facecolor('C2') # turn inactive
                     else:
-                       _ct.center = _t.get_pos(t)
+                       _ct.center = _t.get_pos(t)  # move target
+            #else:
                         
                 
         return _line_drones + _line_targets + _status_texts
