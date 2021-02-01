@@ -16,10 +16,9 @@ def search_heuristic_closest(drone, targets):
         rel_tpos = [_targ.get_pos(now)-drone.get_pos(now) for _targ in remaining]
         closest_target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
         remaining.remove(closest_target);solution.append(closest_target)
-        psi, dt = pm.intercept_1(drone, target)
+        psi, dt = pm.intercept_1(drone, closest_target)
         drone.add_leg(dt, psi)
     return drone, solution
-
 
 def search_exhaustive_threshold(drone, targets):
     test_drone, test_seq = search_heuristic_closest(drone, targets)
@@ -35,20 +34,41 @@ def test_heuristic(drone, targets):
                        t0=0., t1=test_drone.ts[-1], dt=0.1, xlim=(-100, 200), ylim=(-150, 150))
     return anim
     
-def compare_with_optimal(drone, targets, solutions):
-    best_dur, best_seq = pmu.sol_by_name(solutions, 'optimal')
-    if best_seq is None:
-        best_drone, best_seq = pm.search_exhaustive(drone, targets)
-    else: best_drone, best_dur = pm.intercept_sequence_copy(drone, best_seq)
-    test_dur, test_seq = pmu.sol_by_name(solutions, 'heuristic')
-    if test_seq is None: test_drone, test_seq = search_heuristic_closest(drone, targets)
-    else: test_drone, test_dur = pm.intercept_sequence_copy(drone, test_seq)
-    print(f'optimal {best_drone.flight_duration():.1f} s heuristic {test_drone.flight_duration():.1f} s')
+def compare_with_optimal(scen):
+    try:
+        name, opt_dur, opt_seq = scen.solution_by_name('optimal')
+        opt_drone, _ = pm.intercept_sequence_copy(scen.drone, opt_seq)
+    except KeyError:    
+        opt_drone, opt_seq = pm.search_exhaustive(scen.drone, scen.targets)
+        opt_dur = opt_drone.flight_duration()
+        
+    try:
+        name, heur_dur, heur_seq = scen.solution_by_name('heuristic')
+        heur_drone, _ = pm.intercept_sequence_copy(scen.drone, heur_seq)
+    except KeyError:    
+        heur_drone, heur_seq = pm_t3.search_heuristic_closest(scen.drone, scen.targets)
+        heur_dur = heur_drone.flight_duration()
+
+    print(f'optimal {opt_dur:.1f} s heuristic {heur_dur:.1f} s')
 
     fig = plt.figure(tight_layout=True, figsize=[10.24, 5.12])
     ax1, ax2 = fig.subplots(1,2, sharex=True)
-    return pma.animate_multi(fig, [ax1, ax2], [best_drone, test_drone], [best_seq, test_seq], ['Optimal', 'Heuristic'])
-    
+    return pma.animate_multi(fig, [ax1, ax2], [opt_drone, heur_drone], [opt_seq, heur_seq], ['Optimal', 'Heuristic'])
+
+def animate_solutions(scen, names):
+
+    sols = [scen.solution_by_name(name) for name in names]
+    seqs = [_seq for _1, _2, _seq in sols]
+    drones = [pm.intercept_sequence_copy(scen.drone, _seq)[0] for _seq in seqs] 
+
+    _n = len(names)
+    fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
+    axes = fig.subplots(1,_n, sharex=True)
+    if _n == 1: axes=[axes]
+    return pma.animate_multi(fig, axes, drones, seqs, names)
+        
+
+
 def plot_histogram(fig, ax, drone, targets, title):
     drones, targetss = pm.search_exhaustive(drone, targets, keep_all=True)
     test_drone, test_target = search_heuristic_closest(drone, targets)
@@ -119,14 +139,18 @@ def anim_scens(show_opt=True, show_heu=True, show_hist=True, _fs=3.84):
 
     return pma.animate_multi(fig, axes.flatten(), drones, targets, titles, xlim=(-150, 150), ylim=(-150, 150))
 
-def make_or_load_scenario(idx, make=False):
+def _scen_filename(_idx):
     filenames = ['scenario_7_1.yaml', 'scenario_7_2.yaml', 'scenario_7_3.yaml', 'scenario_7_4.yaml',
                  'scenario_8_1.yaml', 'scenario_8_2.yaml', 'scenario_8_3.yaml', 'scenario_8_4.yaml',
                  'scenario_9_1.yaml', 'scenario_9_2.yaml',
                  'scenario_10_1.yaml',
                  'scenario_30_1.yaml', 'scenario_30_2.yaml',
                  'scenario_60_1.yaml', 'scenario_60_2.yaml']
-    if make or not os.path.exists(filenames[idx]):
+    return filenames[_idx]
+
+def make_or_load_scenario(idx, make=False):
+    filename = _scen_filename(idx)
+    if make or not os.path.exists(filename):
         if   idx == 0: drone, targets = pmu.make_random_scenario(ntarg=7, dp0=(10,0), dv=15)
         elif idx == 1: drone, targets = pmu.make_conv_div_scenario(ntarg=7, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=True)
         elif idx == 2: drone, targets = pmu.make_conv_div_scenario(ntarg=7, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=False)
@@ -143,11 +167,14 @@ def make_or_load_scenario(idx, make=False):
         elif idx == 13: drone, targets = pmu.make_conv_div_scenario(ntarg=60, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=True)
         elif idx == 14: drone, targets = pmu.make_conv_div_scenario(ntarg=60, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=False)
         solutions=[]
-        pmu.save_scenario(filenames[idx], drone, targets)
+        pmu.save_scenario(filename, drone, targets)
     else:
-        drone, targets, solutions = pmu.load_scenario(filenames[idx])
+        drone, targets, solutions = pmu.load_scenario(filename)
     return drone, targets, solutions
 
+
+def load_scenario(idx):
+    return pmu.Scenario(filename=_scen_filename(idx))
 
 def save_solutions(idx):
     drone, targets, solutions = make_or_load_scenario(idx)
@@ -160,6 +187,12 @@ def save_solutions(idx):
     solutions = [_format_sol('optimal', best_drone, best_seq), _format_sol('heuristic', test_drone, test_seq)]
     pmu.save_scenario('/tmp/foo.yaml', drone, targets, solutions)
 
+
+def add_solution(idx, drone, sequence, name):
+    _drone, _targets, _solutions = make_or_load_scenario(idx)
+    
+    
+    
 def plot_cpu_time():
     ntargs, dts, dts2 = [2, 3, 4, 5, 6, 7, 8], [], []
     for ntarg in ntargs:
@@ -178,11 +211,13 @@ def plot_cpu_time():
     plt.savefig('../docs/images/ex_search_time_vs_size_2.png')
     
 def main():
-    plot_cpu_time()
+    #plot_cpu_time()
     #save_solutions(1)
     #drone, targets, solutions = make_or_load_scenario(1, make=False)
+    scen = load_scenario(1)
     #anim = test_heuristic(drone, targets)
-    #anim = compare_with_optimal(drone, targets, solutions)
+    #anim = compare_with_optimal(scen)
+    anim = animate_solutions(scen, ['optimal', 'heuristic'])
     #plot_one_histogram(drone, targets)
     #plot_scens_histograms()
     #test_heuristic_3(drone, targets)

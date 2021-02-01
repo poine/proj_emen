@@ -210,6 +210,7 @@ We create a [6  targets scenari](https://github.com/poine/proj_emen/blob/main/sr
 
 ### 3.2: Exhaustive search
 
+For scenario with small number of targets, sequences of targets can be exhaustively searched for the optimal.
 
 <script src="https://emgithub.com/embed.js?target=https%3A%2F%2Fgithub.com%2Fpoine%2Fproj_emen%2Fblob%2F424323787aac42daf5e625b45554e1dcdaf81729%2Fsrc%2Fproj_manen.py%23L83-L94&style=github&showBorder=on&showLineNumbers=on"></script>
 

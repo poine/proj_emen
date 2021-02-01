@@ -110,6 +110,23 @@ def search_exhaustive_with_threshold(drone, targets, max_dur):
         except TimeExceededException: pass
     return best_drone, best_targets
 
+
+
+def search_heuristic_closest(drone, targets):
+    drone = copy.deepcopy(drone) # we don't change our input arguments
+    remaining, solution = targets.copy(), []
+    while len(remaining) > 0:
+        now = drone.flight_duration()
+        rel_tpos = [_targ.get_pos(now)-drone.get_pos(now) for _targ in remaining]
+        closest_target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
+        remaining.remove(closest_target);solution.append(closest_target)
+        psi, dt = intercept_1(drone, closest_target)
+        drone.add_leg(dt, psi)
+    return drone, solution
+
+
+
+
 def main():
     drone = Drone(p0=[0., 0.], v0=15., h0=0.)
     target1 = Actor(5., 5., 10, np.deg2rad(10.), 'target1')

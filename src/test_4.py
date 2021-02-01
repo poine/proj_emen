@@ -9,35 +9,177 @@ import pdb
 import proj_manen as pm, proj_manen_utils as pmu, animations as pma, test_3 as pm_t3
 
 def _names_of_seq(_s): return [_t.name.split('_')[-1] for _t in _s]
-def _print_sol(_d, _s): print(f'{_d:6.2f} {_names_of_seq(_s)}')
-def _mutate(_seq):
-    _seq2 = _seq.copy(); i1, i2 = np.random.randint(0, high=len(_seq), size=2)
+def _names_of_seq2(_s): foo = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in foo])
+def _print_sol(_d, _s): print(f'{_d: 8.2f}: {_names_of_seq2(_s)}')
+def _mutate(_seq):  # swaping to random stages
+    _seq2 = _seq.copy()
+    i1 = np.random.randint(0, high=len(_seq))
+    i2 = np.random.randint(0, high=len(_seq)-1)
+    while i2==i1: i2 = np.random.randint(0, high=len(_seq)-1)
     _foo = _seq2.pop(i1); _seq2.insert(i2, _foo)
     return _seq2
 
-def search_locally(drone, targets, best_dur, best_seq, ntest):
+def _mutate2(_seq):  # swaping to adjacent stages
+    _seq2 = _seq.copy()
+    i1 = np.random.randint(0, high=len(_seq))
+    i2 = i1-1 if i1>0 else i1+1
+    _foo = _seq2.pop(i1); _seq2.insert(i2, _foo)
+    return _seq2
+
+def search_locally(drone, targets, start_dur, start_seq, ntest, debug=False, Tf=None):
+    best_drone, cur_drone = drone, drone
+    best_seq = cur_seq = start_seq
+    best_dur = cur_dur = start_dur
+    if Tf is None: Tf = lambda i: ntest/(i+1)
+    if debug: all_durs, kept_durs, Paccept = np.zeros(ntest) , np.zeros(ntest), np.zeros(ntest) 
     for i in range(ntest):
-        _s2 = _mutate(best_seq)
+        _s2 = _mutate(cur_seq)
         _d2, _dur = pm.intercept_sequence_copy(drone, _s2)
+        if debug: all_durs[i] = _dur
         if _dur < best_dur:
-            best_dur, best_seq = _dur, _s2
-            _print_sol(best_dur, best_seq)
-    return best_dur, best_seq
+            best_dur, best_drone, best_seq = _dur, _d2, _s2
+            #_print_sol(best_dur, best_seq)
+        T = Tf(i)
+        acc_prob = np.exp(-(_dur-cur_dur)/T) if _dur > cur_dur else 0. # warning 1
+        if debug: Paccept[i] = acc_prob
+        _r = np.random.uniform(low=0, high=1.)
+        if _dur < cur_dur or _r <= acc_prob:
+            cur_dur, cur_drone, cur_seq = _dur, _d2, _s2
+            _print_sol(cur_dur, cur_seq)
+        if debug: kept_durs[i] = cur_dur
 
-def search_heuristic_closest_refined(drone, targets, solutions, ntest):
-    test_drone, test_seq = pm_t3.search_heuristic_closest(drone, targets)
-    print('heuristic closest target')
-    _print_sol(test_drone.flight_duration(), test_seq)
-    print('local search')
-    best_dur, best_seq = search_locally(drone, targets, test_drone.flight_duration(), test_seq, ntest)
-    opt_dur, opt_seq = pmu.sol_by_name(solutions, 'optimal')
-    if opt_dur is not None:
-        print('optimal')
-        _print_sol(opt_dur, opt_seq)
+    if debug: return best_drone, best_seq, all_durs, kept_durs, Paccept
+    else: return best_drone, best_seq
 
-def main():
-    drone, targets, solutions = pm_t3.make_or_load_scenario(11)
-    search_heuristic_closest_refined(drone, targets, solutions, ntest=10000)
+def search_heuristic_closest_refined(scen, ntest, debug=False, Tf=None, start_seq_name='heuristic'):
+    try: # compute closest_target heuristic if unknown
+        name, heur_dur, heur_seq = scen.solution_by_name(start_seq_name)
+    except KeyError:    
+        heur_drone, heur_seq = pm_t3.search_heuristic_closest(scen.drone, scen.targets)
+        heur_dur = heur_drone.flight_duration()
+    print('Starting point (heuristic closest target)');_print_sol(heur_dur, heur_seq)
+    print(f'Local search ({ntest} iterations)')
+    if debug:
+        best_drone, best_seq, all_durs, kept_durs, Paccept = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest, debug, Tf)
+        return best_drone, best_seq, all_durs, kept_durs, Paccept
+    else:
+        best_drone, best_seq = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest)
+        return best_drone, best_seq
+
+
+
+
+
+def test1(filename = 'scenario_30_1.yaml'):
+    scen = pmu.Scenario(filename=filename)
+    try:
+        scen.solution_by_name('heuristic')
+    except KeyError:
+        test_drone, test_seq = pm_t3.search_heuristic_closest(scen.drone, scen.targets)
+        scen.add_solution('heuristic', test_drone.flight_duration(), test_seq)
+    
+    best_drone, best_seq = search_heuristic_closest_refined(scen, ntest=10000)
+    scen.add_solution('heuristic_refined', best_drone.flight_duration(), best_seq)
+    scen.save(f'/tmp/{filename}')
+
+def test2(filename = 'scenario_30_1.yaml'):
+    scen = pmu.Scenario(filename=filename)
+    try:
+        _n, _d, best_seq = scen.solution_by_name('heuristic_refined')
+        best_drone, _ = pm.intercept_sequence_copy(scen.drone, best_seq)
+    except KeyError: 
+        best_drone, best_seq = search_heuristic_closest_refined(scen, ntest=15000)
+        scen.add_solution('heuristic_refined', best_drone.flight_duration(), best_seq)
+        scen.save(f'/tmp/{filename}')
+        
+    names = ['heuristic', 'heuristic_refined', 'best']#, 'optimal']
+    _n = len(names)
+    if 0:
+        fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12]);fig.canvas.set_window_title(filename)
+        axes = fig.subplots(1,_n, sharex=True)
+        pmu.plot_2d(fig, axes, scen, names)
+    else:
+        anim = pm_t3.animate_solutions(scen, ['heuristic', 'heuristic_refined'])
+        
+
+    
+def test3(idx=17, show_search=True):
+    if 1: scen = pmu.ScenarioFactory.make(idx)
+    else: scen = pmu.Scenario(filename=pmu.ScenarioFactory.filenames[idx])
+
+    heur_drone, heur_seq = pm_t3.search_heuristic_closest(scen.drone, scen.targets)
+    scen.add_solution('heuristic', heur_drone.flight_duration(), heur_seq)
+
+    if 0:#show_search:
+        best_drone, best_seq = search_heuristic_closest_refined(scen, ntest=5000)
+        scen.add_solution('heuristic_refined', best_drone.flight_duration(), best_seq)
+        scen.save(f'/tmp/{pmu.ScenarioFactory.filenames[idx]}')
+    if 0:
+        anim = pm_t3.animate_solutions(scen, ['heuristic', 'best'])
+        return anim
+    if 1:
+        pmu.plot_solutions(scen, ['heuristic'], pmu.ScenarioFactory.filenames[idx])
+    #pmu.plot_solutions(scen, ['best', 'best1', 'best2'], pmu.ScenarioFactory.filenames[idx])
+    #fig = plt.gcf()
+    #if not show_search:
+    #    pmu.plot_2d(fig, [plt.gca()], scen, ['heuristic'])
+    #else:
+    #    axes = fig.subplots(1,2, sharex=True)
+    #    pmu.plot_2d(fig, axes, scen, ['heuristic', 'heuristic_refined'])
+
+def play_anim(filename, sol_name):
+    scen = pmu.Scenario(filename=filename)
+    #pmu.plot_solutions(scen, [sol_name], filename)
+    anim = pm_t3.animate_solutions(scen, [sol_name, sol_name])
+    
+def test4(filename = 'scenario_30_3.yaml'):
+    scen = pmu.Scenario(filename=filename)
+    #pmu.plot_solutions(scen, ['best'], filename)
+    ntest = 60000
+    def aff(a0, a1, n, i): return a0 + (a1-a0)*i/ntest
+    def exp(e0, n, i): return e0*np.exp(-i/n)
+    def f1(a0, i0, a1, i1, i): return a0 if i<=i0 else a0+(i-i0)/(i1-i0)*(a1-a0) if i <= i1 else a1
+    #Ts = [lambda i: 1e-16, lambda i: 10, lambda i: 100, lambda i: aff(100, 10, ntest, i)]
+    ax1, ax2, ax3 = plt.gcf().subplots(3,1, sharex=True)
+    Ts = [
+        #lambda i: exp(100, ntest/3., i),
+        #lambda i: exp(100, ntest/4., i),
+        #lambda i: exp(100, ntest/6., i),
+        #lambda i: exp(50, ntest/5., i),
+        #lambda i: exp(50, ntest/6., i),
+        #lambda i: exp(50, ntest/7., i),
+        #lambda i: aff(100, 0.0005, ntest, i),
+        #lambda i: f1(50, ntest/5, 1e-2, 8*ntest/10, i),
+        lambda i: f1(25, ntest/5, 1e-2, 8*ntest/10, i),
+        lambda i: f1(25, ntest/5, 1e-2, 8*ntest/10, i),
+        lambda i: f1(25, ntest/8, 1e-2, 8*ntest/10, i),
+        lambda i: f1(25, ntest/8, 1e-2, 8*ntest/10, i),
+        #lambda i: f1(10, ntest/5, 1e-2, 8*ntest/10, i),
+        #lambda i: aff(150, 0.0005, ntest, i),
+        #lambda i: 1e-16,
+    ]
+    for k, Tf in enumerate(Ts):
+        best_drone, best_seq, all_durs, kept_durs, Paccept = search_heuristic_closest_refined(scen, ntest=ntest, debug=True, Tf=Tf, start_seq_name='heuristic')
+        scen.add_solution('heuristic_refined', best_drone.flight_duration(), best_seq)
+        scen.save(f'/tmp/{filename}_{best_drone.flight_duration():.2f}')
+        #plt.plot(all_durs)
+        ax1.plot(kept_durs, label=f'{k}')
+        ax2.plot(Paccept, label=f'{k}')
+        ax3.plot([Ts[k](i) for i in range(ntest)], label=f'{k}')
+        
+        
+    pmu.decorate(ax1, legend=True)
+    pmu.decorate(ax2, legend=True)
+    pmu.decorate(ax3, legend=True)
+        
+def main(id_scen=13):
+    #test1(filename = 'scenario_30_2.yaml')
+    #test2(filename = 'scenario_30_3.yaml')
+    #test3()
+    test4(filename = 'scenario_60_3.yaml')
+    #play_anim('/tmp/scenario_60_3.yaml_199.77', 'heuristic_refined')
+    plt.show()
     
 if __name__ == '__main__':
     main()
+    

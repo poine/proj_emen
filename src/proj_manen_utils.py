@@ -1,8 +1,17 @@
-import numpy as np, yaml, copy, itertools
+import os
+import numpy as np, matplotlib.pyplot as plt, yaml, copy, itertools
 
 import proj_manen as pm
 
 import pdb
+
+# we assume this file is proj_dir/src/proj_manen_utils.py
+def proj_dir():
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    return os.path.abspath(os.path.join(dirname, '..'))
+
+def ressource(_r): return os.path.join(proj_dir(), _r)
+
 
 def decorate(ax, title=None, xlab=None, ylab=None, legend=None, xlim=None, ylim=None, min_yspan=None):
     ax.xaxis.grid(color='k', linestyle='-', linewidth=0.2)
@@ -23,16 +32,21 @@ def plot_actor(ax, _a, dt=10., _name=''):
     ax.arrow(p0[0], p0[1], vx, vy, head_width=v*0.025, head_length=v*0.05, length_includes_head=True)
     #ax.plot((p0[0], p1[0]), (p0[1], p1[1]), 'k--')
     
-def plot_2d(ax, drone, targets, dt):
-    plot_actor(ax, drone, dt=10., _name='drone')
-    for _t in targets:
-        plot_actor(ax, _t, dt=10., _name='t')
-    ax.axis('equal')
-    ax.legend()
-    ax.grid()
-    ax.set_xlim(-20, 20)
-    ax.set_ylim(-20, 20)
+def plot_2d(fig, axes, scen, names):
+    for name, ax in zip(names, axes):
+        drone, dur = pm.intercept_sequence_copy(scen.drone, scen.solution_by_name(name)[2])
+        drone_poss = np.asarray(drone.Xs)
+        ax.plot(drone_poss[:,0], drone_poss[:,1], '-o')
+        decorate(ax, f'{name}: {dur:.2f} s'); ax.axis('equal')
 
+def plot_solutions(scen, names, filename=''):
+    _n = len(names)
+    fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
+    fig.canvas.set_window_title(filename)
+    axes = fig.subplots(1,_n, sharex=True)
+    if _n==1: axes=[axes]
+    return plot_2d(fig, axes, scen, names)
+    
 
 def make_random_scenario(ntarg=10, dp0=(0,0), dv=15, plim=50):
     drone = pm.Drone(dp0, dv, 0)
@@ -81,6 +95,8 @@ def load_scenario(filename):
     _ta_by_name = {_t.name:_t for _t in targets}
     for _s in solutions: # replace list of target names with references to actual targets
         _s[2] = [_ta_by_name[_tn] for _tn in _s[2]]
+    print(f'  {len(targets)} targets, {len(solutions)} known solutions')
+    for _s in solutions: print(f'     {_s[0]}: {_s[1]:.2f} s')
     return drone, targets, solutions
 
 def save_scenario(filename, drone, targets, solutions=[]):
@@ -93,7 +109,7 @@ def save_scenario(filename, drone, targets, solutions=[]):
     if len(solutions)>0:
         txt += 'solutions:\n'
         for _name, _dur, _seq in solutions:
-            txt+=f'  {_name}:\n    duration: {_dur}\n    seq: {_seq}\n'
+            txt+=f'  {_name}:\n    duration: {_dur}\n    seq: {[_t.name for _t in _seq]}\n'
     with open(filename, 'w') as f:
         f.write(txt)
 
@@ -102,3 +118,49 @@ def sol_by_name(solutions, name):
     for _name, _dur, _seq in solutions:
         if _name == name: return _dur, _seq
     return None, None
+
+
+
+class Scenario:
+    def __init__(self, **kwargs):
+        if 'filename' in kwargs: self.load(kwargs['filename'])
+    
+    def load(self, filename):
+       self.drone, self.targets, self.solutions = load_scenario(filename)
+       self.solutions_by_name = {_s[0]: _s for _s in self.solutions}
+
+    def save(self, filename):
+        save_scenario(filename, self.drone, self.targets, self.solutions)
+
+    def add_solution(self, name, dur, seq):
+        self.solutions.append([name, dur, seq])
+        self.solutions_by_name[name] = self.solutions[-1]
+        
+    def solution_by_name(self, name):
+        return self.solutions_by_name[name]
+
+
+
+
+
+
+class ScenarioFactory:
+    filenames = ['scenario_7_1.yaml', 'scenario_7_2.yaml', 'scenario_7_3.yaml', 'scenario_7_4.yaml',
+                 'scenario_8_1.yaml', 'scenario_8_2.yaml', 'scenario_8_3.yaml', 'scenario_8_4.yaml',
+                 'scenario_9_1.yaml', 'scenario_9_2.yaml',
+                 'scenario_10_1.yaml',
+                 'scenario_30_1.yaml', 'scenario_30_2.yaml', 'scenario_30_3.yaml', 'scenario_30_4.yaml',
+                 'scenario_60_1.yaml', 'scenario_60_2.yaml', 'scenario_60_3.yaml']
+
+
+    def make(idx):
+        if idx == 12: drone, targets = make_conv_div_scenario(ntarg=30, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, tv_uni=True, conv=True, other=True)
+        if idx == 13: drone, targets = make_conv_div_scenario(ntarg=30, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, tv_uni=True, conv=False, other=False)
+        if idx == 14: drone, targets = make_conv_div_scenario(ntarg=30, dp0=(30,5), dv=15, tv_mean=5., tv_std=1., tv_uni=False, conv=False, other=False)
+        if idx == 17: drone, targets = make_conv_div_scenario(ntarg=60, dp0=(30,5), dv=15, tv_mean=5., tv_std=1., tv_uni=False, conv=False, other=False)
+
+
+        s = Scenario()
+        s.drone, s.targets, s.solutions, s.solutions_by_name = drone, targets, [], {}
+        s.save(ScenarioFactory.filenames[idx])
+        return s
