@@ -73,6 +73,12 @@ def profile(idx=0, nloop=int(1e4)):
     print(f'{nloop} iterations in {dt:.1f} s, {ips:.0f} iteration/s')
 
 
-test_set()
+def test2():
+    drone = pm.Drone(p0=[40., 0.], v0=15., h0=0.) 
+    target = pm.Actor(27., 0., 5., 0., 'target')
+    psi, dt = pm.intercept_1(drone, target)
+     
+#test_set()
 #test1(int(sys.argv[1]))#5)
+test2()
 #profile()

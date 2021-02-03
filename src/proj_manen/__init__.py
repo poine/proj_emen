@@ -51,16 +51,37 @@ class Drone(Actor): # piecewise cst heading
     
 def intercept_1(drone, target): # a cos(psi) + b sin(psi) = c
     delta_p0 = drone.Xs[-1] - target.get_pos(drone.flight_duration())
+    if np.linalg.norm(delta_p0) < 1e-12:
+        print('###over target')
+        return 0., 0.  # the drone is already over the target
     a, b = delta_p0[1]*drone.v, -delta_p0[0]*drone.v
     c = delta_p0[1]*target.vx-delta_p0[0]*target.vy
-    psis = 2*np.arctan(np.roots([a+c, -2*b, c-a]))
-    delta_v = _to_eucl(drone.v, psis[0]) - target._v
-    #if len(psis)<2: print('single root??? FIXME')#pdb.set_trace()
-    if np.dot(delta_v, delta_p0) <= 0 or len(psis)<2:
-        psi = psis[0]
+    if abs(a) < 1e-12: # we know b is not zero thanks to previous over_target test
+        psi1 = np.arcsin(c/b); psi2 = np.pi - psi1
+        delta_v1 = _to_eucl(drone.v, psi1) - target._v
+        delta_v2 = _to_eucl(drone.v, psi2) - target._v
+        if np.dot(delta_v1, delta_p0) <= 0:
+            psi, delta_v = psi1, delta_v1
+        else:
+            psi, delta_v = psi2, delta_v2
+        #print(f'{target.name} {psi1:.1f} {psi2:.1f} {delta_p0} {delta_v1} {delta_v2}')
+        #pdb.set_trace()
     else:
-        delta_v = _to_eucl(drone.v, psis[1]) - target._v
-        psi = psis[1]
+        psis = 2*np.arctan(np.roots([a+c, -2*b, c-a]))
+        #if len(psis)<1:
+        #    print('no solution??? FIXME')
+        #    pdb.set_trace()
+        #if len(psis)<2:
+        #    print('single root??? FIXME')
+        #    pdb.set_trace()
+        delta_v = _to_eucl(drone.v, psis[0]) - target._v
+        if np.dot(delta_v, delta_p0) <= 0 or len(psis)<2:
+            psi = psis[0]
+        else:
+            delta_v = _to_eucl(drone.v, psis[1]) - target._v
+            psi = psis[1]
+        #print(f'{target.name} {psis} {psi}')
+
     dt = np.linalg.norm(delta_p0)/np.linalg.norm(delta_v)
     return psi, dt
         
@@ -83,19 +104,6 @@ def intercept_sequence_if_shorter(drone, targets, max_t):
         if drone.flight_duration() >= max_t: raise TimeExceededException
     return drone.ts[-1]
 
-#import sortedcontainers  ... I'd want something like that...
-def search_exhaustive(drone, targets, keep_all=False):
-    perms = set(itertools.permutations(targets))
-    print(f'exhaustive search for {len(targets)} targets ({len(perms)} sequences)')
-    best_dur, best_drone, best_targets, all_drones, all_targets= float('inf'), None, None, [],[]
-    for targets in perms:
-        _drone = copy.deepcopy(drone)
-        dur = intercept_sequence(_drone, targets)
-        if dur < best_dur:
-            best_dur, best_drone, best_targets = dur, _drone, targets
-        if keep_all:
-            all_drones.append(_drone); all_targets.append(targets)
-    return (all_drones, all_targets) if keep_all else (best_drone, best_targets)
 
 def search_exhaustive_with_threshold(drone, targets, max_dur):
     perms = set(itertools.permutations(targets))

@@ -6,19 +6,19 @@
 import os, time, copy, numpy as np, matplotlib.pyplot as plt
 import pdb
 
-import proj_manen as pm, proj_manen_utils as pmu, animations as pma
+import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma
 
-def search_heuristic_closest(drone, targets):
-    drone = copy.deepcopy(drone) # we don't change our input arguments
-    remaining, solution = targets.copy(), []
-    while len(remaining) > 0:
-        now = drone.flight_duration()
-        rel_tpos = [_targ.get_pos(now)-drone.get_pos(now) for _targ in remaining]
-        closest_target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
-        remaining.remove(closest_target);solution.append(closest_target)
-        psi, dt = pm.intercept_1(drone, closest_target)
-        drone.add_leg(dt, psi)
-    return drone, solution
+# def search_heuristic_closest(drone, targets):
+#     drone = copy.deepcopy(drone) # we don't change our input arguments
+#     remaining, solution = targets.copy(), []
+#     while len(remaining) > 0:
+#         now = drone.flight_duration()
+#         rel_tpos = [_targ.get_pos(now)-drone.get_pos(now) for _targ in remaining]
+#         closest_target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
+#         remaining.remove(closest_target);solution.append(closest_target)
+#         psi, dt = pm.intercept_1(drone, closest_target)
+#         drone.add_leg(dt, psi)
+#     return drone, solution
 
 def search_exhaustive_threshold(drone, targets):
     test_drone, test_seq = search_heuristic_closest(drone, targets)

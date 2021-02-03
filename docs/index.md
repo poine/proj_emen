@@ -100,14 +100,14 @@ $$
 Expressing $$\vect{\delta_v}=\begin{pmatrix}v_d \cos{\psi_d} -v_{tx}\\v_d \sin{\psi_d} -v_{ty}\end{pmatrix}$$ and noting $$\vect{\delta_{p0}} = \begin{pmatrix}\delta_{p0x}\\\delta_{p0y}\end{pmatrix}$$, \eqref{eq:intercept_cond1} can be rewritten as
 
 $$
-(v_d \cos{\psi_d} -v_{tx})\delta_{p0x} - (v_d \sin{\psi_d} -v_{ty})\delta_{p0y} = 0
+(v_d \cos{\psi_d} -v_{tx})\delta_{p0y} - (v_d \sin{\psi_d} -v_{ty})\delta_{p0x} = 0
 $$
 
 or 
 
 {% comment %}
 $$
-v_d \delta_{p0x} \cos{\psi_d} - v_d \delta_{p0y} \sin{\psi_d} = v_{tx}\delta_{p0x} - v_{ty}\delta_{p0y} 
+v_d \delta_{p0x} \cos{\psi_d} - v_d \delta_{p0y} \sin{\psi_d} = v_{tx}\delta_{p0y} - v_{ty}\delta_{p0x} 
 $$
 
 or
@@ -119,7 +119,13 @@ a  \cos{\psi_d} + b \sin{\psi_d} = c
 \end{equation}
 $$
 
-with $$a=v_d \delta_{p0x}$$, $$b=-v_d \delta_{p0y}$$ and $$c=v_{tx}\delta_{p0x} - v_{ty}\delta_{p0y}$$
+with 
+
+$$
+\begin{equation}
+a=v_d \delta_{p0y} \qquad b=-v_d \delta_{p0x} \qquad c=v_{tx}\delta_{p0y} - v_{ty}\delta_{p0x}
+\end{equation}
+$$
 
 
 Substituting variable $$\lambda = \tan{\frac{\psi}{2}}$$ ($$\psi=2arctan{\lambda} $$), we get

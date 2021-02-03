@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 
 import pdb
 
-import proj_manen as pm, proj_manen_utils as pmu
+import proj_manen as pm, proj_manen.utils as pmu
 
 def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xlim=(-200, 200), ylim=(-200, 200)):
     if t1 is None: t1 = np.max([_d.flight_duration() for _d in drones])

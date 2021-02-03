@@ -6,50 +6,50 @@
 import os, time, copy, numpy as np, matplotlib.pyplot as plt
 import pdb
 
-import proj_manen as pm, proj_manen_utils as pmu, animations as pma, test_3 as pm_t3
+import proj_manen as pm, proj_manen_utils as pmu, animations as pma, test_3 as pm_t3, proj_manen.simulated_annealing as pm_sa
 
-def _names_of_seq(_s): return [_t.name.split('_')[-1] for _t in _s]
-def _names_of_seq2(_s): foo = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in foo])
-def _print_sol(_d, _s): print(f'{_d: 8.2f}: {_names_of_seq2(_s)}')
-def _mutate(_seq):  # swaping to random stages
-    _seq2 = _seq.copy()
-    i1 = np.random.randint(0, high=len(_seq))
-    i2 = np.random.randint(0, high=len(_seq)-1)
-    while i2==i1: i2 = np.random.randint(0, high=len(_seq)-1)
-    _foo = _seq2.pop(i1); _seq2.insert(i2, _foo)
-    return _seq2
+# def _names_of_seq(_s): return [_t.name.split('_')[-1] for _t in _s]
+# def _names_of_seq2(_s): foo = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in foo])
+# def _print_sol(_d, _s): print(f'{_d: 8.2f}: {_names_of_seq2(_s)}')
+# def _mutate(_seq):  # swaping to random stages
+#     _seq2 = _seq.copy()
+#     i1 = np.random.randint(0, high=len(_seq))
+#     i2 = np.random.randint(0, high=len(_seq)-1)
+#     while i2==i1: i2 = np.random.randint(0, high=len(_seq)-1)
+#     _foo = _seq2.pop(i1); _seq2.insert(i2, _foo)
+#     return _seq2
 
-def _mutate2(_seq):  # swaping to adjacent stages
-    _seq2 = _seq.copy()
-    i1 = np.random.randint(0, high=len(_seq))
-    i2 = i1-1 if i1>0 else i1+1
-    _foo = _seq2.pop(i1); _seq2.insert(i2, _foo)
-    return _seq2
+# def _mutate2(_seq):  # swaping to adjacent stages
+#     _seq2 = _seq.copy()
+#     i1 = np.random.randint(0, high=len(_seq))
+#     i2 = i1-1 if i1>0 else i1+1
+#     _foo = _seq2.pop(i1); _seq2.insert(i2, _foo)
+#     return _seq2
 
-def search_locally(drone, targets, start_dur, start_seq, ntest, debug=False, Tf=None):
-    best_drone, cur_drone = drone, drone
-    best_seq = cur_seq = start_seq
-    best_dur = cur_dur = start_dur
-    if Tf is None: Tf = lambda i: ntest/(i+1)
-    if debug: all_durs, kept_durs, Paccept = np.zeros(ntest) , np.zeros(ntest), np.zeros(ntest) 
-    for i in range(ntest):
-        _s2 = _mutate(cur_seq)
-        _d2, _dur = pm.intercept_sequence_copy(drone, _s2)
-        if debug: all_durs[i] = _dur
-        if _dur < best_dur:
-            best_dur, best_drone, best_seq = _dur, _d2, _s2
-            #_print_sol(best_dur, best_seq)
-        T = Tf(i)
-        acc_prob = np.exp(-(_dur-cur_dur)/T) if _dur > cur_dur else 0. # warning 1
-        if debug: Paccept[i] = acc_prob
-        _r = np.random.uniform(low=0, high=1.)
-        if _dur < cur_dur or _r <= acc_prob:
-            cur_dur, cur_drone, cur_seq = _dur, _d2, _s2
-            _print_sol(cur_dur, cur_seq)
-        if debug: kept_durs[i] = cur_dur
+# def search_locally(drone, targets, start_dur, start_seq, ntest, debug=False, Tf=None):
+#     best_drone, cur_drone = drone, drone
+#     best_seq = cur_seq = start_seq
+#     best_dur = cur_dur = start_dur
+#     if Tf is None: Tf = lambda i: ntest/(i+1)
+#     if debug: all_durs, kept_durs, Paccept = np.zeros(ntest) , np.zeros(ntest), np.zeros(ntest) 
+#     for i in range(ntest):
+#         _s2 = _mutate(cur_seq)
+#         _d2, _dur = pm.intercept_sequence_copy(drone, _s2)
+#         if debug: all_durs[i] = _dur
+#         if _dur < best_dur:
+#             best_dur, best_drone, best_seq = _dur, _d2, _s2
+#             #_print_sol(best_dur, best_seq)
+#         T = Tf(i)
+#         acc_prob = np.exp(-(_dur-cur_dur)/T) if _dur > cur_dur else 0. # warning 1
+#         if debug: Paccept[i] = acc_prob
+#         _r = np.random.uniform(low=0, high=1.)
+#         if _dur < cur_dur or _r <= acc_prob:
+#             cur_dur, cur_drone, cur_seq = _dur, _d2, _s2
+#             _print_sol(cur_dur, cur_seq)
+#         if debug: kept_durs[i] = cur_dur
 
-    if debug: return best_drone, best_seq, all_durs, kept_durs, Paccept
-    else: return best_drone, best_seq
+#     if debug: return best_drone, best_seq, all_durs, kept_durs, Paccept
+#     else: return best_drone, best_seq
 
 def search_heuristic_closest_refined(scen, ntest, debug=False, Tf=None, start_seq_name='heuristic'):
     try: # compute closest_target heuristic if unknown
@@ -57,13 +57,15 @@ def search_heuristic_closest_refined(scen, ntest, debug=False, Tf=None, start_se
     except KeyError:    
         heur_drone, heur_seq = pm_t3.search_heuristic_closest(scen.drone, scen.targets)
         heur_dur = heur_drone.flight_duration()
-    print('Starting point (heuristic closest target)');_print_sol(heur_dur, heur_seq)
+    print('Starting point (heuristic closest target)');pm_sa._print_sol(0, heur_dur, heur_dur, heur_seq)
     print(f'Local search ({ntest} iterations)')
     if debug:
-        best_drone, best_seq, all_durs, kept_durs, Paccept = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest, debug, Tf)
+        #best_drone, best_seq, all_durs, kept_durs, Paccept = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest, debug, Tf)
+        best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, start_dur=None, start_seq=None, ntest=ntest, debug=True, Tf=Tf, display=True)
         return best_drone, best_seq, all_durs, kept_durs, Paccept
     else:
-        best_drone, best_seq = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest)
+        #best_drone, best_seq = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest)
+        best_drone, best_seq = pm_sa.search(scen.drone, scen.targets, start_dur=None, start_seq=None, ntest=ntest, debug=False, Tf=Tf, display=False)
         return best_drone, best_seq
 
 
@@ -132,51 +134,57 @@ def play_anim(filename, sol_name):
     #pmu.plot_solutions(scen, [sol_name], filename)
     anim = pm_t3.animate_solutions(scen, [sol_name, sol_name])
     
-def test4(filename = 'scenario_30_3.yaml'):
+def test_sa(filename, epoch=100000):
     scen = pmu.Scenario(filename=filename)
     #pmu.plot_solutions(scen, ['best'], filename)
-    ntest = 60000
-    def aff(a0, a1, n, i): return a0 + (a1-a0)*i/ntest
-    def exp(e0, n, i): return e0*np.exp(-i/n)
-    def f1(a0, i0, a1, i1, i): return a0 if i<=i0 else a0+(i-i0)/(i1-i0)*(a1-a0) if i <= i1 else a1
+    #def aff(a0, a1, n, i): return a0 + (a1-a0)*i/ntest
+    #def exp(e0, n, i): return e0*np.exp(-i/n)
+    #def f1(a0, i0, a1, i1, i): return a0 if i<=i0 else a0+(i-i0)/(i1-i0)*(a1-a0) if i <= i1 else a1
     #Ts = [lambda i: 1e-16, lambda i: 10, lambda i: 100, lambda i: aff(100, 10, ntest, i)]
-    ax1, ax2, ax3 = plt.gcf().subplots(3,1, sharex=True)
     Ts = [
         #lambda i: exp(100, ntest/3., i),
         #lambda i: exp(100, ntest/4., i),
         #lambda i: exp(100, ntest/6., i),
         #lambda i: exp(50, ntest/5., i),
-        #lambda i: exp(50, ntest/6., i),
-        #lambda i: exp(50, ntest/7., i),
-        #lambda i: aff(100, 0.0005, ntest, i),
-        #lambda i: f1(50, ntest/5, 1e-2, 8*ntest/10, i),
-        lambda i: f1(25, ntest/5, 1e-2, 8*ntest/10, i),
-        lambda i: f1(25, ntest/5, 1e-2, 8*ntest/10, i),
-        lambda i: f1(25, ntest/8, 1e-2, 8*ntest/10, i),
-        lambda i: f1(25, ntest/8, 1e-2, 8*ntest/10, i),
-        #lambda i: f1(10, ntest/5, 1e-2, 8*ntest/10, i),
-        #lambda i: aff(150, 0.0005, ntest, i),
+        #lambda i: exp(50, epoch/6., i),
+        #lambda i: exp(50, epoch/7., i),
+        #lambda i: aff(100, 0.0005, epoch, i),
+        #lambda i: f1(50, epoch/5, 1e-2, 8*epochst/10, i),
+        lambda i: pm_sa._f1(25, epoch/5, 1e-2, 8*epoch/10, i),
+        lambda i: pm_sa._f1(25, epoch/5, 1e-2, 8*epoch/10, i),
+        lambda i: pm_sa._f1(25, epoch/8, 1e-2, 8*epoch/10, i),
+        lambda i: pm_sa._f1(25, epoch/8, 1e-2, 8*epoch/10, i),
+        #lambda i: f1(10, epoch/5, 1e-2, 8*epoch/10, i),
+        #lambda i: aff(150, 0.0005, epoch, i),
         #lambda i: 1e-16,
     ]
+
+    ax1, ax2, ax3 = plt.gcf().subplots(3,1, sharex=True)
     for k, Tf in enumerate(Ts):
-        best_drone, best_seq, all_durs, kept_durs, Paccept = search_heuristic_closest_refined(scen, ntest=ntest, debug=True, Tf=Tf, start_seq_name='heuristic')
-        scen.add_solution('heuristic_refined', best_drone.flight_duration(), best_seq)
-        scen.save(f'/tmp/{filename}_{best_drone.flight_duration():.2f}')
+        best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, ntest=epoch, debug=True, Tf=Tf, display=True)
+        scen.add_solution('sa', best_drone.flight_duration(), best_seq)
+        scen.save(f'/tmp/{os.path.basename(filename)}_{best_drone.flight_duration():.2f}')
         #plt.plot(all_durs)
         ax1.plot(kept_durs, label=f'{k}')
         ax2.plot(Paccept, label=f'{k}')
-        ax3.plot([Ts[k](i) for i in range(ntest)], label=f'{k}')
+        ax3.plot([Ts[k](i) for i in range(epoch)], label=f'{k}')
         
         
     pmu.decorate(ax1, legend=True)
     pmu.decorate(ax2, legend=True)
     pmu.decorate(ax3, legend=True)
-        
+
+
+def compare_epoch():
+    filename = pmu. ressource('data/scenario_30_1.yaml')
+    ax1, ax2, ax3 = plt.gcf().subplots(3,1, sharex=True)
+    
+    
 def main(id_scen=13):
     #test1(filename = 'scenario_30_2.yaml')
     #test2(filename = 'scenario_30_3.yaml')
     #test3()
-    test4(filename = 'scenario_60_3.yaml')
+    test_sa(filename = pmu.ressource('data/scenario_60_3.yaml'), epoch=int(1e6))
     #play_anim('/tmp/scenario_60_3.yaml_199.77', 'heuristic_refined')
     plt.show()
     
