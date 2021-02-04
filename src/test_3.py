@@ -55,17 +55,18 @@ def compare_with_optimal(scen):
     ax1, ax2 = fig.subplots(1,2, sharex=True)
     return pma.animate_multi(fig, [ax1, ax2], [opt_drone, heur_drone], [opt_seq, heur_seq], ['Optimal', 'Heuristic'])
 
-def animate_solutions(scen, names):
+# moved to animation module
+# def animate_solutions(scen, names):
 
-    sols = [scen.solution_by_name(name) for name in names]
-    seqs = [_seq for _1, _2, _seq in sols]
-    drones = [pm.intercept_sequence_copy(scen.drone, _seq)[0] for _seq in seqs] 
+#     sols = [scen.solution_by_name(name) for name in names]
+#     seqs = [_seq for _1, _2, _seq in sols]
+#     drones = [pm.intercept_sequence_copy(scen.drone, _seq)[0] for _seq in seqs] 
 
-    _n = len(names)
-    fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
-    axes = fig.subplots(1,_n, sharex=True)
-    if _n == 1: axes=[axes]
-    return pma.animate_multi(fig, axes, drones, seqs, names)
+#     _n = len(names)
+#     fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
+#     axes = fig.subplots(1,_n, sharex=True)
+#     if _n == 1: axes=[axes]
+#     return pma.animate_multi(fig, axes, drones, seqs, names)
         
 
 
@@ -139,42 +140,6 @@ def anim_scens(show_opt=True, show_heu=True, show_hist=True, _fs=3.84):
 
     return pma.animate_multi(fig, axes.flatten(), drones, targets, titles, xlim=(-150, 150), ylim=(-150, 150))
 
-def _scen_filename(_idx):
-    filenames = ['scenario_7_1.yaml', 'scenario_7_2.yaml', 'scenario_7_3.yaml', 'scenario_7_4.yaml',
-                 'scenario_8_1.yaml', 'scenario_8_2.yaml', 'scenario_8_3.yaml', 'scenario_8_4.yaml',
-                 'scenario_9_1.yaml', 'scenario_9_2.yaml',
-                 'scenario_10_1.yaml',
-                 'scenario_30_1.yaml', 'scenario_30_2.yaml',
-                 'scenario_60_1.yaml', 'scenario_60_2.yaml']
-    return filenames[_idx]
-
-def make_or_load_scenario(idx, make=False):
-    filename = _scen_filename(idx)
-    if make or not os.path.exists(filename):
-        if   idx == 0: drone, targets = pmu.make_random_scenario(ntarg=7, dp0=(10,0), dv=15)
-        elif idx == 1: drone, targets = pmu.make_conv_div_scenario(ntarg=7, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=True)
-        elif idx == 2: drone, targets = pmu.make_conv_div_scenario(ntarg=7, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=False)
-        elif idx == 3: drone, targets = pmu.make_conv_div_scenario(ntarg=7, dp0=(30,5), dv=15, tv_mean=6., tv_std=1.5, other=True)
-        elif idx == 4: drone, targets = pmu.make_random_scenario(ntarg=8, dp0=(10,0), dv=15)
-        elif idx == 5: drone, targets = pmu.make_conv_div_scenario(ntarg=8, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=True)
-        elif idx == 6: drone, targets = pmu.make_conv_div_scenario(ntarg=8, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=False)
-        elif idx == 7: drone, targets = pmu.make_conv_div_scenario(ntarg=8, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, other=True)
-        elif idx == 8: drone, targets = pmu.make_random_scenario(ntarg=9, dp0=(10,0), dv=15)
-        elif idx == 9: drone, targets = pmu.make_conv_div_scenario(ntarg=9, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=True)
-        elif idx == 10: drone, targets = pmu.make_random_scenario(ntarg=10, dp0=(10,0), dv=15)
-        elif idx == 11: drone, targets = pmu.make_conv_div_scenario(ntarg=30, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=True)
-        elif idx == 12: drone, targets = pmu.make_conv_div_scenario(ntarg=30, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=False)
-        elif idx == 13: drone, targets = pmu.make_conv_div_scenario(ntarg=60, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=True)
-        elif idx == 14: drone, targets = pmu.make_conv_div_scenario(ntarg=60, dp0=(30,5), dv=15, tv_mean=5., tv_std=1.5, conv=False)
-        solutions=[]
-        pmu.save_scenario(filename, drone, targets)
-    else:
-        drone, targets, solutions = pmu.load_scenario(filename)
-    return drone, targets, solutions
-
-
-def load_scenario(idx):
-    return pmu.Scenario(filename=_scen_filename(idx))
 
 def save_solutions(idx):
     drone, targets, solutions = make_or_load_scenario(idx)

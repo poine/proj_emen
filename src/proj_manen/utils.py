@@ -11,7 +11,7 @@ def norm_angles_mpi_pi(_a): return( _a + np.pi) % (2 * np.pi ) - np.pi
 # we assume this file is proj_dir/src/proj_manen_utils.py
 def proj_dir():
     dirname, filename = os.path.split(os.path.abspath(__file__))
-    return os.path.abspath(os.path.join(dirname, '..'))
+    return os.path.abspath(os.path.join(dirname, '../..'))
 
 def ressource(_r): return os.path.join(proj_dir(), _r)
 
@@ -32,11 +32,26 @@ def decorate(ax, title=None, xlab=None, ylab=None, legend=None, xlim=None, ylim=
     if min_yspan is not None: ensure_yspan(ax, min_yspan)
 
 
-def plot_scenario(scen, name=''):
-    fig, ax = plt.gcf(), plt.gca()
+def plot_scenario(scen, name='', fig=None, ax=None):
+    if fig is None: fig = plt.gcf()
+    if ax is None: ax = plt.gca()
+    d0 = scen.drone.get_pos(0)
+    ax.plot(d0[0], d0[1], 'X', markersize=10)
     for _t in scen.targets:
         plot_actor(ax, _t, dt=10., _name='')
     decorate(ax, f'{name}');ax.axis('equal')   
+
+def plot_scenarios(scens, names, sol_name=None):
+    _n = len(names)
+    fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
+    axes = fig.subplots(1,_n)#, sharex=True)
+    if _n==1: axes=[axes]
+    for _s, _n, _ax in zip(scens, names, axes):
+        if sol_name is not None:
+            plot_2d(fig, [_ax], _s, sol_name)
+        else:
+            plot_scenario(_s, _n, fig, _ax)
+        
     
 def plot_actor(ax, _a, dt=10., _name='', annotate=True):
     p0, p1, vx, vy, v = _a.get_pos(0), _a.get_pos(dt), _a.vx, _a.vy, _a.v
@@ -50,13 +65,14 @@ def plot_2d(fig, axes, scen, names):
     for name, ax in zip(names, axes):
         seq = scen.solution_by_name(name)[2]
         drone, dur = pm.intercept_sequence_copy(scen.drone, seq)
-        print(f'recomputed {format_seq(seq)} {dur:.2f} ')
+        #print(f'recomputed {format_seq(seq)} {dur:.2f} ')
         drone_poss = np.asarray(drone.Xs)
         ax.plot(drone_poss[:,0], drone_poss[:,1], '-X')
         for _target, _t in zip(seq, drone.ts[1:]):
             plot_actor(ax, _target, dt=_t)
         decorate(ax, f'{name}: {dur:.2f} s'); ax.axis('equal')
 
+# plot several solution for a single scenario
 def plot_solutions(scen, names, filename=''):
     _n = len(names)
     fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
@@ -103,7 +119,7 @@ def make_random_scenario(ntarg, dp0=(10,0), dv=15,
     elif tv['kind'] == 'uniform':
         vs = np.random.uniform(low=tv['low'], high=tv['high'], size=ntarg)
 
-    targets = [pm.Actor(p0[0], p0[1], v, h, f'target_{_k+1}') for _k, (p0, h, v) in enumerate(zip(ps, hs, vs))]
+    targets = [pm.Actor(p0[0], p0[1], v, h, f'{_k+1}') for _k, (p0, h, v) in enumerate(zip(ps, hs, vs))]
     return drone, targets
 
 
@@ -114,9 +130,10 @@ def load_scenario(filename):
         _dict = yaml.load(f)
     targets, solutions = [], []
     for _k, _args in _dict.items():
-        if _k.startswith('target'):
-            p0, v, h = _args['p0'], _args['v'], np.deg2rad(_args['h'])
-            targets.append(pm.Actor(p0[0], p0[1], v, h, _k))
+        if _k == 'targets':
+            for __k, __args in _dict[_k].items():
+                p0, v, h = __args['p0'], __args['v'], np.deg2rad(__args['h'])
+                targets.append(pm.Actor(p0[0], p0[1], v, h, __k))
         elif _k == 'drone':
             p0, v, h = _args['p0'], _args['v'], np.deg2rad(_args['h'])
             drone = pm.Drone(p0, v, h)
@@ -132,9 +149,9 @@ def load_scenario(filename):
 
 def save_scenario(filename, drone, targets, solutions=[]):
     print(f'saving scenario to: {filename}')
-    txt = ''
+    txt = 'targets:\n'
     for _t in targets:
-        txt += f'{_t.name}:\n  p0: [{_t.x0},{_t.y0}]\n  v: {_t.v}\n  h: {np.rad2deg(_t.psi)}\n\n'
+        txt += f'  {_t.name}:\n    p0: [{_t.x0},{_t.y0}]\n    v: {_t.v}\n    h: {np.rad2deg(_t.psi)}\n\n'
     _d = drone    
     txt += f'{_d.name}:\n  p0: [{_d.x0},{_d.y0}]\n  v: {_d.v}\n  h: {np.rad2deg(_d.psi)}\n\n'
     if len(solutions)>0:
@@ -145,7 +162,8 @@ def save_scenario(filename, drone, targets, solutions=[]):
         f.write(txt)
 
 
-def format_seq(_s): tmp = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in tmp]) 
+#def format_seq(_s): tmp = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in tmp]) 
+def format_seq(_s): return '-'.join([f'{int(_t.name):02d}' for _t in _s]) 
 
 class Scenario:
     def __init__(self, **kwargs):
@@ -182,95 +200,156 @@ class ScenarioFactory:
              lambda: make_random_scenario(ntarg=7, dp0=(30,5), dv=15,
                                            tp={'kind':'circle', 'r':75}, th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
         73:  ['scenario_7_3.yaml', # circle away
-             lambda: make_random_scenario(ntarg=7, dp0=(30,5), dv=15,
+             lambda: make_random_scenario(ntarg=7, dp0=(10,0), dv=15,
                                            tp={'kind':'circle', 'r':25}, th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
         74:  ['scenario_7_4.yaml', # line
              lambda: make_random_scenario(ntarg=7, dp0=(30,5), dv=15,
                                            tp={'kind':'line', 'len':50}, th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
-        75:  ['scenario_7_9.yaml', # grid
+        78:  ['scenario_7_8.yaml', # grid 1
              lambda: make_random_scenario(ntarg=7, dp0=(0,-10), dv=15,
                                            tp={'kind':'grid', 'nr':3, 'd':15},
-                                           th={'kind':'normal', 'mean':np.deg2rad(20.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        79:  ['scenario_7_9.yaml', # grid 2
+             lambda: make_random_scenario(ntarg=7, dp0=(0,-10), dv=15,
+                                           tp={'kind':'grid', 'nr':3, 'd':15},
+                                           th={'kind':'normal', 'mean':np.deg2rad(30.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
 
         81:  ['scenario_8_1.yaml', # 8 targets, defaults: uniform law for pos and heading, normal law for speed
              lambda: make_random_scenario(ntarg=8)],
-        89:  ['scenario_8_9.yaml', # grid
+        88:  ['scenario_8_8.yaml', # grid 1
              lambda: make_random_scenario(ntarg=8, dp0=(-10,-10), dv=15,
                                            tp={'kind':'grid', 'nr':3, 'd':15},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        89:  ['scenario_8_9.yaml', # grid 2
+             lambda: make_random_scenario(ntarg=8, dp0=(-10,-10), dv=15,
+                                           tp={'kind':'grid', 'nr':3, 'd':15},
+                                           th={'kind':'normal', 'mean':np.deg2rad(20.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
         
         91:  ['scenario_9_1.yaml', # 9 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=9)],
-        99:  ['scenario_9_9.yaml', # grid
+        92:  ['scenario_9_2.yaml', # circle toward
+              lambda: make_random_scenario(ntarg=9, dp0=(0,0), dv=15,
+                                           tp={'kind':'circle', 'r':75},
+                                           th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        93:  ['scenario_9_3.yaml', # circle away
+              lambda: make_random_scenario(ntarg=9, dp0=(10,0), dv=15,
+                                           tp={'kind':'circle', 'r':25}, th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)})],
+        94:  ['scenario_9_4.yaml', # line
+             lambda: make_random_scenario(ntarg=9, dp0=(30,5), dv=15,
+                                           tp={'kind':'line', 'len':50}, th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)})],
+        98:  ['scenario_9_8.yaml', # grid 1
              lambda: make_random_scenario(ntarg=9, dp0=(-10,-10), dv=15,
                                            tp={'kind':'grid', 'nr':3, 'd':15},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        99:  ['scenario_9_9.yaml', # grid 2
+              lambda: make_random_scenario(ntarg=9, dp0=(-10,-10), dv=15,
+                                           tp={'kind':'grid', 'nr':3, 'd':15},
+                                           th={'kind':'normal', 'mean':np.deg2rad(30.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
 
+        
         101: ['scenario_10_1.yaml', # 10 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=10)],
-        109: ['scenario_10_9.yaml', # grid
+        108: ['scenario_10_8.yaml', # grid 1
               lambda: make_random_scenario(ntarg=10, dp0=(-10,-10), dv=15,
                                             tp={'kind':'grid', 'nr':3, 'd':15},
                                             th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        109: ['scenario_10_9.yaml', # grid 2
+              lambda: make_random_scenario(ntarg=10, dp0=(-10,-10), dv=15,
+                                            tp={'kind':'grid', 'nr':3, 'd':15},
+                                            th={'kind':'normal', 'mean':np.deg2rad(20.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
 
-        15: ['scenario_15_1.yaml', # 15 targets, defaults: uniform law for pos and heading, normal law for speed
+        151: ['scenario_15_1.yaml', # 15 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=15)],
-        16: ['scenario_15_2.yaml', # circle toward
-             lambda: make_random_scenario(ntarg=15, dp0=(30,5), dv=15,
-                                           tp={'kind':'circle', 'r':75}, th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
-        18: ['scenario_15_4.yaml', # line
+        152: ['scenario_15_2.yaml', # circle toward
+              lambda: make_random_scenario(ntarg=15, dp0=(30,5), dv=15,
+                                           tp={'kind':'circle', 'r':75},
+                                           th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        153: ['scenario_15_3.yaml', # circle away
+              lambda: make_random_scenario(ntarg=15, dp0=(10,0), dv=15,
+                                           tp={'kind':'circle', 'r':25},
+                                           th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        154: ['scenario_15_4.yaml', # line
               lambda: make_random_scenario(ntarg=15, dp0=(30,5), dv=15,
                                            tp={'kind':'line', 'len':50}, th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
-        19: ['scenario_15_5.yaml', # circle headings normal
+        155: ['scenario_15_5.yaml', # circle headings normal
              lambda: make_random_scenario(ntarg=15, dp0=(30,5), dv=15,
                                            tp={'kind':'circle', 'r':75}, th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
-        20: ['scenario_15_6.yaml', # circle headings normal
+        156: ['scenario_15_6.yaml', # circle headings normal
              lambda: make_random_scenario(ntarg=15, dp0=(25,25), dv=15,
                                            tp={'kind':'circle', 'r':75},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
-        21: ['scenario_15_7.yaml', # circle toward
+        157: ['scenario_15_7.yaml', # circle toward
              lambda: make_random_scenario(ntarg=15, dp0=(30,5), dv=15,
                                            tp={'kind':'circle', 'r':75},
                                            th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
-        22: ['scenario_15_8.yaml', # circle away
+        158: ['scenario_15_8.yaml', # circle away
              lambda: make_random_scenario(ntarg=15, dp0=(0,0), dv=15,
                                            tp={'kind':'circle', 'r':15},
                                            th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
-        23: ['scenario_15_9.yaml', # grid
+        159: ['scenario_15_9.yaml', # grid
              lambda: make_random_scenario(ntarg=15, dp0=(-10,-10), dv=15,
                                            tp={'kind':'grid', 'nr':5, 'd':15},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
-        24: ['scenario_15_10.yaml', # grid
+        1510: ['scenario_15_10.yaml', # grid
              lambda: make_random_scenario(ntarg=15, dp0=(-10,-10), dv=15,
                                           tp={'kind':'grid', 'nr':5, 'd':15},
                                           th={'kind':'normal', 'mean':np.deg2rad(20.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
 
-        31: ['scenario_30_1.yaml', # 30 targets, defaults: uniform law for pos and heading, normal law for speed
-              lambda: make_random_scenario(ntarg=30)],
-        32: ['scenario_30_2.yaml', # circle toward
-             lambda: make_random_scenario(ntarg=30, dp0=(30,5), dv=15,
-                                           tp={'kind':'circle', 'r':75}, th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
-        34: ['scenario_30_4.yaml', # line
-              lambda: make_random_scenario(ntarg=30, dp0=(30,5), dv=15,
-                                           tp={'kind':'line', 'len':50}, th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
-        36: ['scenario_30_6.yaml', # circle headings normal
+        301: ['scenario_30_1.yaml', # 30 targets, defaults: uniform law for pos and heading, normal law for speed
+              lambda: make_random_scenario(ntarg=30, tp={'kind':'uniform', 'low':-100, 'high':100})],
+        302: ['scenario_30_2.yaml', # circle toward
+              lambda: make_random_scenario(ntarg=30, dp0=(0,0), dv=15,
+                                           tp={'kind':'circle', 'r':200.},
+                                           th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(1.)}, tv=ScenarioFactory._def_tv)],
+        303: ['scenario_30_3.yaml', # circle away
+              lambda: make_random_scenario(ntarg=30, dp0=(10,0), dv=15,
+                                           tp={'kind':'circle', 'r':25},
+                                           th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        304: ['scenario_30_4.yaml', # line
+              lambda: make_random_scenario(ntarg=30, dp0=(50,0), dv=15,
+                                           tp={'kind':'line', 'len':150},
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        306: ['scenario_30_6.yaml', # circle headings normal
              lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
                                            tp={'kind':'circle', 'r':75},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
-        
-        39: ['scenario_30_9.yaml', # grid
+        307: ['scenario_30_7.yaml', # circle headings normal, faster
+             lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
+                                           tp={'kind':'circle', 'r':75},
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':7.5, 'std':0.})],
+        308: ['scenario_30_8.yaml', # grid 1
              lambda: make_random_scenario(ntarg=30, dp0=(-10,-10), dv=15,
                                            tp={'kind':'grid', 'nr':5, 'd':15},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
+        309: ['scenario_30_9.yaml', # grid 2
+             lambda: make_random_scenario(ntarg=30, dp0=(-10,-10), dv=15,
+                                           tp={'kind':'grid', 'nr':5, 'd':15},
+                                           th={'kind':'normal', 'mean':np.deg2rad(25.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
         50: ['scenario_60_1.yaml', # 60 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=60, tp={'kind':'uniform', 'low':-100, 'high':100})],
-        51: ['scenario_60_2.yaml', # circle toward
-             lambda: make_random_scenario(ntarg=60, dp0=(30,5), dv=15,
-                                           tp={'kind':'circle', 'r':75}, th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)})],
-        52: ['scenario_60_5.yaml', # 60 targets, defaults: uniform law for pos and heading, normal law for speed
+        602: ['scenario_60_2.yaml', # circle toward
+              lambda: make_random_scenario(ntarg=60, dp0=(30,5), dv=15,
+                                           tp={'kind':'circle', 'r':120},
+                                           th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(1.)}, tv=ScenarioFactory._def_tv)],
+        603: ['scenario_60_3.yaml', # circle away
+              lambda: make_random_scenario(ntarg=60, dp0=(0,0), dv=15,
+                                           tp={'kind':'circle', 'r':25},
+                                           th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        605: ['scenario_60_5.yaml', # 60 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=60, tp={'kind':'uniform', 'low':-250, 'high':250})],
-
-        60: ['scenario_120_5.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
+        606: ['scenario_60_6.yaml', # circle headings normal
+              lambda: make_random_scenario(ntarg=60, dp0=(25,25), dv=15,
+                                           tp={'kind':'circle', 'r':100},
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
+        6061: ['scenario_60_6_1.yaml', # circle headings normal with noise
+              lambda: make_random_scenario(ntarg=60, dp0=(25,25), dv=15,
+                                           tp={'kind':'circle', 'r':100},
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(10.)}, tv={'kind':'normal', 'mean':5., 'std':1.5})],
+        6062: ['scenario_60_6_2.yaml', # circle headings normal with less noise
+              lambda: make_random_scenario(ntarg=60, dp0=(25,25), dv=15,
+                                           tp={'kind':'circle', 'r':100},
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(5.)}, tv={'kind':'normal', 'mean':5., 'std':0.5})],
+        1205: ['scenario_120_5.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=120, tp={'kind':'uniform', 'low':-250, 'high':250})],
     }
 
@@ -295,12 +374,54 @@ def search_exhaustive(drone, targets, keep_all=False, display=False):
     perms = set(itertools.permutations(targets))
     if display: print(f'exhaustive search for {len(targets)} targets ({len(perms)} sequences)')
     best_dur, best_drone, best_targets, all_drones, all_targets= float('inf'), None, None, [],[]
-    for targets in perms:
-        _drone = copy.deepcopy(drone)
-        dur = pm.intercept_sequence(_drone, targets)
-        if dur < best_dur:
-            best_dur, best_drone, best_targets = dur, _drone, targets
+    for _seq in perms:
+        _drone, _dur = pm.intercept_sequence_copy(drone, _seq)
+        if _dur < best_dur:
+            best_dur, best_drone, best_targets = _dur, _drone, _seq
         if keep_all:
-            all_drones.append(_drone); all_targets.append(targets)
+            all_drones.append(_drone); all_targets.append(_seq)
     if display: print(f'optimal seq {best_dur:.02f}s {format_seq(best_targets)}')
     return (all_drones, all_targets) if keep_all else (best_drone, best_targets)
+
+# don't evaluate too long sequences till the end (with exceptions)
+def search_exhaustive_improved(drone, targets, display=False):
+    perms = set(itertools.permutations(targets))
+    d0, seq0 = search_heuristic_closest(drone, targets)
+    print(f'exhaustive_improved search for {len(targets)} targets ({len(perms)} sequences, heuristic {d0.flight_duration():.2f}s)')
+    best_dur, best_drone, best_targets = d0.flight_duration(), None, None
+    for targets in perms:
+        _drone = copy.deepcopy(drone)
+        try:
+            dur = pm.intercept_sequence_if_shorter(_drone, targets, best_dur)
+            if dur < best_dur:
+                best_dur, best_drone, best_targets = dur, _drone, targets
+        except pm.TimeExceededException: pass
+    return best_drone, best_targets
+
+# same without exceptions
+def search_exhaustive_improved2(drone, targets, display=False):
+    perms = set(itertools.permutations(targets))
+    d0, seq0 = search_heuristic_closest(drone, targets)
+    print(f'exhaustive_improved2 search for {len(targets)} targets ({len(perms)} sequences, heuristic {d0.flight_duration():.2f}s)')
+    best_dur, best_drone, best_targets = d0.flight_duration(), None, None
+    for targets in perms:
+        _drone = copy.deepcopy(drone)
+        dur = pm.intercept_sequence_if_shorter2(_drone, targets, best_dur)
+        if dur is not None and dur < best_dur:
+                best_dur, best_drone, best_targets = dur, _drone, targets
+    return best_drone, best_targets
+
+
+
+def search_heuristic_closest(drone, targets):
+    drone = copy.deepcopy(drone) # we don't change our input arguments
+    remaining, solution = targets.copy(), []
+    while len(remaining) > 0:
+        now = drone.flight_duration()
+        rel_tpos = [_targ.get_pos(now)-drone.get_pos(now) for _targ in remaining]
+        closest_target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
+        remaining.remove(closest_target);solution.append(closest_target)
+        psi, dt = pm.intercept_1(drone, closest_target)
+        drone.add_leg(dt, psi)
+    return drone, solution
+

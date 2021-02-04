@@ -7,7 +7,7 @@ import sys, time
 import numpy as np, matplotlib.pyplot as plt
 import pdb
 
-import proj_manen as pm
+import proj_manen as pm, proj_manen.utils as pmu
 
 
 def plot(ax, _d, _t, dt):
@@ -77,8 +77,20 @@ def test2():
     drone = pm.Drone(p0=[40., 0.], v0=15., h0=0.) 
     target = pm.Actor(27., 0., 5., 0., 'target')
     psi, dt = pm.intercept_1(drone, target)
-     
+
+
+def profile_by_seq_len(nloop=100):
+    for _l in [3, 7, 10, 30, 60, 120]:
+        drone, targets = pmu.make_random_scenario(_l)
+        _start = time.perf_counter()
+        for i in range(nloop):
+            pm.intercept_sequence_copy(drone, targets)
+        _end = time.perf_counter()
+        dt = _end-_start; ips=nloop/dt
+        print(f'{_l}: {dt:.1f} s {ips:.0f} seq/s')
+            
 #test_set()
 #test1(int(sys.argv[1]))#5)
-test2()
+#test2()
+profile_by_seq_len()
 #profile()

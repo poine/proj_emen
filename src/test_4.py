@@ -6,7 +6,7 @@
 import os, time, copy, numpy as np, matplotlib.pyplot as plt
 import pdb
 
-import proj_manen as pm, proj_manen_utils as pmu, animations as pma, test_3 as pm_t3, proj_manen.simulated_annealing as pm_sa
+import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma, test_3 as pm_t3, proj_manen.simulated_annealing as pm_sa
 
 # def _names_of_seq(_s): return [_t.name.split('_')[-1] for _t in _s]
 # def _names_of_seq2(_s): foo = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in foo])
@@ -134,7 +134,7 @@ def play_anim(filename, sol_name):
     #pmu.plot_solutions(scen, [sol_name], filename)
     anim = pm_t3.animate_solutions(scen, [sol_name, sol_name])
     
-def test_sa(filename, epoch=100000):
+def plot_search_chronograms(filename, epoch=100000):
     scen = pmu.Scenario(filename=filename)
     #pmu.plot_solutions(scen, ['best'], filename)
     #def aff(a0, a1, n, i): return a0 + (a1-a0)*i/ntest
@@ -150,18 +150,19 @@ def test_sa(filename, epoch=100000):
         #lambda i: exp(50, epoch/7., i),
         #lambda i: aff(100, 0.0005, epoch, i),
         #lambda i: f1(50, epoch/5, 1e-2, 8*epochst/10, i),
-        lambda i: pm_sa._f1(25, epoch/5, 1e-2, 8*epoch/10, i),
-        lambda i: pm_sa._f1(25, epoch/5, 1e-2, 8*epoch/10, i),
-        lambda i: pm_sa._f1(25, epoch/8, 1e-2, 8*epoch/10, i),
-        lambda i: pm_sa._f1(25, epoch/8, 1e-2, 8*epoch/10, i),
+        #lambda i: pm_sa._f1(25, epoch/5, 1e-2, 8*epoch/10, i),
+        lambda i: pm_sa._f1(5, epoch/5, 1e-2, 8*epoch/10, i),
+        lambda i: pm_sa._f1(2, epoch/10, 1e-2, 9*epoch/10, i),
+        #lambda i: pm_sa._f1(1, epoch/10, 1e-2, 9*epoch/10, i),
         #lambda i: f1(10, epoch/5, 1e-2, 8*epoch/10, i),
         #lambda i: aff(150, 0.0005, epoch, i),
         #lambda i: 1e-16,
     ]
+    Ts = [lambda i: pm_sa._f1(2, epoch/10, 1e-2, 9*epoch/10, i)]*5
 
     ax1, ax2, ax3 = plt.gcf().subplots(3,1, sharex=True)
     for k, Tf in enumerate(Ts):
-        best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, ntest=epoch, debug=True, Tf=Tf, display=True)
+        best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, ntest=epoch, debug=True, Tf=Tf, display=2)
         scen.add_solution('sa', best_drone.flight_duration(), best_seq)
         scen.save(f'/tmp/{os.path.basename(filename)}_{best_drone.flight_duration():.2f}')
         #plt.plot(all_durs)
@@ -170,22 +171,61 @@ def test_sa(filename, epoch=100000):
         ax3.plot([Ts[k](i) for i in range(epoch)], label=f'{k}')
         
         
-    pmu.decorate(ax1, legend=True)
-    pmu.decorate(ax2, legend=True)
-    pmu.decorate(ax3, legend=True)
+    pmu.decorate(ax1, 'Cost', legend=True)#, ylim=(0, 1000))
+    pmu.decorate(ax2, 'Paccept', legend=True)
+    pmu.decorate(ax3, 'Temperature', legend=True)
 
 
-def compare_epoch():
-    filename = pmu. ressource('data/scenario_30_1.yaml')
-    ax1, ax2, ax3 = plt.gcf().subplots(3,1, sharex=True)
-    
+def run_many_searches(filename, nb_searches, epochs, run, cache_filename):
+    if run:
+        scen = pmu.Scenario(filename=filename)
+        cost_by_ep, seq_by_ep = [],[]
+        for _ep in epochs:
+            print(f'-{_ep} epochs')
+            _drones, _seqs = [],[]
+            for i in range(nb_searches):
+                _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=1)
+                _drones.append(_drone); _seqs.append(_seq)
+                print(f' run {i: 3d}: {_drone.flight_duration():.2f}s')
+            cost_by_run = [_d.flight_duration() for _d in _drones]
+            cost_by_ep.append(cost_by_run)
+            seq_by_ep.append([pmu.format_seq(_s) for _s in _seqs])
+        np.savez(cache_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
+    else:
+        data = np.load(cache_filename+'.npz')
+        cost_by_ep, seq_by_ep, epochs = data['cost_by_ep'], data['seq_by_ep'], data['epochs'] 
+    print(cost_by_ep, seq_by_ep, epochs)
+    for e, c in zip(epochs, cost_by_ep):
+        plt.hist(c, label=f'{e}')
+    pmu.decorate(plt.gca(), legend=True)
     
 def main(id_scen=13):
     #test1(filename = 'scenario_30_2.yaml')
     #test2(filename = 'scenario_30_3.yaml')
     #test3()
-    test_sa(filename = pmu.ressource('data/scenario_60_3.yaml'), epoch=int(1e6))
     #play_anim('/tmp/scenario_60_3.yaml_199.77', 'heuristic_refined')
+
+
+    if 0:
+        plot_search_chronograms(filename = pmu.ressource('data/scenario_60_6_2.yaml'), epoch=int(2e4))
+
+    if 1:
+        run_many_searches(pmu.ressource('data/scenario_60_6_2.yaml'),
+                          nb_searches=10, epochs=[int(5e3), int(1e4), int(2e4)],
+                          run=True, cache_filename=pmu.ressource('data/scenario_60_6_2_runs'))
+    if 0:
+        run_many_searches(pmu.ressource('data/scenario_30_1.yaml'),
+                          nb_searches=20, epochs=[int(1e3), int(5e3), int(1e4)],
+                          run=False, cache_filename=pmu.ressource('data/scenario_30_1_runs'))
+
+    if 0:
+        run_many_searches(pmu.ressource('data/scenario_15_3.yaml'),
+                          nb_searches=20, epochs=[int(1e3), int(5e3), int(1e4)],
+                          run=False, cache_filename=pmu.ressource('data/scenario_15_3_runs'))
+    if 0:
+        run_many_searches(pmu.ressource('data/scenario_9_4.yaml'),
+                          nb_searches=50, epochs=[int(5e2), int(1e3), int(2e3), int(4e3)],
+                          run=False, cache_filename=pmu.ressource('data/scenario_9_3_runs'))
     plt.show()
     
 if __name__ == '__main__':

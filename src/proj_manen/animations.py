@@ -8,12 +8,79 @@ import pdb
 
 import proj_manen as pm, proj_manen.utils as pmu
 
+
+def animate_solutions(scen, names, window_title=None):
+
+    sols = [scen.solution_by_name(name) for name in names]
+    seqs = [_seq for _1, _2, _seq in sols]
+    drones = [pm.intercept_sequence_copy(scen.drone, _seq)[0] for _seq in seqs] 
+
+    _n = len(names)
+    fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
+    if window_title is not None: fig.canvas.set_window_title(window_title)
+
+    axes = fig.subplots(1,_n)#, sharex=True)
+    if _n == 1: axes=[axes]
+    return animate_multi(fig, axes, drones, seqs, names)
+
+
+# compute scene extends
+def compute_and_set_scale(axes, drones, targets):
+    for _drone, _targets, _ax in zip(drones, targets, axes):
+        ps = np.array(_drone.Xs) # drone positions
+        t0s = np.array([_t.p0 for _t in _targets]) # targets initial positions
+        ps = np.append(ps, t0s, axis=0)
+        #pdb.set_trace()
+        margin = 10.
+        bl, tr = np.min(ps,axis=0)-margin, np.max(ps,axis=0)+margin
+        #print(f'extends {bl} {tr}')
+        xlim, ylim = (bl[0], tr[0]), (bl[1], tr[1])
+        #print(f'xlim {xlim} ylim {ylim}')
+        dx, dy = tr-bl
+        if dx>dy:
+            _c = np.sum(ylim); ylim= ((_c-dx)/2, (_c+dx)/2)
+        else:
+            _c = np.sum(xlim); xlim= ((_c-dy)/2, (_c+dy)/2)
+        _ax.set_xlim(*xlim)
+        _ax.set_ylim(*ylim)
+        _ax.axis('equal')
+
+
+_COL_ON = 'wheat'
+_COL_OFF = 'green'
+class MyAnimation:
+    def __init__(self, ax, drone, targets, name):
+        self.drone, self.targets = drone, targets
+        self.status_fmt = f'Time: {{:04.1f}} / {drone.flight_duration():.1f} s   Targets: {{}} / {len(targets)}'
+        bbox_props = dict(boxstyle='round', alpha=0.5)
+        self.status_text = ax.text(0.025, 0.92, '', transform=ax.transAxes, bbox=bbox_props)
+
+    def init(self):
+        self.finished = False
+        self.status_text.get_bbox_patch().set_color(_COL_ON)
+        return [self.status_text]
+
+    def update(self, i, t):
+        idx_leg = self.drone._idx_leg(t)%len(self.drone.ts)
+        if t <= self.drone.flight_duration():
+            self.status_text.set_text(self.status_fmt.format(t, idx_leg))
+        else:
+            if not self.finished:
+                self.status_text.get_bbox_patch().set_color(_COL_OFF)
+                self.finished = True
+        return [self.status_text] # or []
+
+    
 def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xlim=(-200, 200), ylim=(-200, 200)):
     if t1 is None: t1 = np.max([_d.flight_duration() for _d in drones])
+    compute_and_set_scale(axes, drones, targets)
     time = np.arange(t0, t1, dt)
 
-    _status_fmts = [f'Time: {{:04.1f}} / {_d.flight_duration():.1f} s   Targets: {{}} / {len(_t)}' for _d, _t in zip(drones, targets)]
-    _status_texts = [_ax.text(0.025, 0.92, '', transform=_ax.transAxes) for _ax in axes]
+    anims = [MyAnimation(_ax, _d, _t, _n) for _ax, _d, _t, _n in zip(axes, drones, targets, names)]
+    
+    #_status_fmts = [f'Time: {{:04.1f}} / {_d.flight_duration():.1f} s   Targets: {{}} / {len(_t)}' for _d, _t in zip(drones, targets)]
+    #bbox_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    #_status_texts = [_ax.text(0.025, 0.92, '', transform=_ax.transAxes, bbox=bbox_props) for _ax in axes]
     _circle_targets = []
     for _ts in targets:
         _circle_targets.append([plt.Circle((_t.x0, _t.y0), 2., color='C1', fill=True, zorder=1)  for _t in _ts])
@@ -26,20 +93,23 @@ def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xli
     #pdb.set_trace()
         
     for _ax, _name in zip(axes, names):
-        _ax.set_xlim(*xlim); _ax.set_ylim(*ylim); _ax.grid(); _ax.set_title(_name); _ax.axis('equal')
+        _ax.grid(); _ax.set_title(_name)#; _ax.axis('equal')#; _ax.set_xlim(*xlim); _ax.set_ylim(*ylim); 
 
     def _init():
         for _c in np.array(_circle_targets).flatten().tolist(): # set all targets active
             _c.set_edgecolor('C1'); _c.set_facecolor('C1')
-        return _line_drones + _line_targets
+        foo=[]
+        for _a in anims:
+            foo+=_a.init()
+        return foo + _line_drones + _line_targets
 
     def _animate(i):
         t = t0 + i * dt
-        for _d, _ts, _s, _sf, _c, _cts in zip(drones, targets, _status_texts, _status_fmts, _circle_drones, _circle_targets):
+        for _d, _ts, _c, _cts in zip(drones, targets, _circle_drones, _circle_targets):
             idx_leg = _d._idx_leg(t)%len(_d.ts)
             #if idx_leg < 0: idx_leg += len(_d.ts)
             if t <= _d.flight_duration() +0.1:
-                _s.set_text(_sf.format(t, idx_leg))
+                #_s.set_text(_sf.format(t, idx_leg))
                 _c.center = _d.get_pos(t)
                 for _k, (_t, _ct) in enumerate(zip(_ts, _cts)): # for all targets
                     if _k<idx_leg:
@@ -47,9 +117,13 @@ def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xli
                     else:
                        _ct.center = _t.get_pos(t)  # move target
             #else:
-                        
-                
-        return _line_drones + _line_targets + _status_texts
+                #_s.get_bbox_patch().set_color('green')
+
+        foo=[]
+        for _a in anims:
+            foo+=_a.update(i, t)
+            
+        return foo + _line_drones + _line_targets# + _status_texts
 
     anim = animation.FuncAnimation(fig, _animate, np.arange(1, len(time)),
                                    interval=dt*1e3, blit=True, init_func=_init, repeat_delay=1000)

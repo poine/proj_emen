@@ -104,33 +104,13 @@ def intercept_sequence_if_shorter(drone, targets, max_t):
         if drone.flight_duration() >= max_t: raise TimeExceededException
     return drone.ts[-1]
 
-
-def search_exhaustive_with_threshold(drone, targets, max_dur):
-    perms = set(itertools.permutations(targets))
-    print(f'thresholded search for {len(targets)} targets ({len(perms)} sequences, threshold {max_dur:.1f}s)')
-    best_dur, best_drone, best_targets = max_dur, None, None
-    for targets in perms:
-        _drone = copy.deepcopy(drone)
-        try:
-            dur = intercept_sequence_if_shorter(_drone, targets, best_dur)
-            if dur < best_dur:
-                best_dur, best_drone, best_targets = dur, _drone, targets
-        except TimeExceededException: pass
-    return best_drone, best_targets
-
-
-
-def search_heuristic_closest(drone, targets):
-    drone = copy.deepcopy(drone) # we don't change our input arguments
-    remaining, solution = targets.copy(), []
-    while len(remaining) > 0:
-        now = drone.flight_duration()
-        rel_tpos = [_targ.get_pos(now)-drone.get_pos(now) for _targ in remaining]
-        closest_target = remaining[np.argmin(np.linalg.norm(rel_tpos, axis=1))]
-        remaining.remove(closest_target);solution.append(closest_target)
-        psi, dt = intercept_1(drone, closest_target)
+def intercept_sequence_if_shorter2(drone, targets, max_t):
+    for target in targets:
+        psi, dt = intercept_1(drone, target)
         drone.add_leg(dt, psi)
-    return drone, solution
+        if drone.flight_duration() >= max_t: return None
+    return drone.ts[-1]
+
 
 
 
