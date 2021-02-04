@@ -227,19 +227,25 @@ def main(id_scen=13):
     if 0:
         plot_search_chronograms(filename = pmu.ressource('data/scenario_60_6_2.yaml'), epoch=int(2e4))
 
-    if 1:
+    if 0:
         data1 = create_or_load_search_set(pmu.ressource('data/scenario_60_6_2.yaml'),
-                                          nb_searches=10, epochs=[int(5e3)],#, int(1e4), int(2e4), int(5e4)],
-                                          cache_filename=pmu.ressource('data/scenario_60_6_2_runs_1'),
+                                          nb_searches=10, epochs=[int(2e4)],
+                                          cache_filename=pmu.ressource('data/scenario_60_6_2_runs_3'),
                                           force_run=True)
+    if 0:
         data2 = create_or_load_search_set(pmu.ressource('data/scenario_60_6_2.yaml'),
                                           nb_searches=10, epochs=[int(1e4)],
                                           cache_filename=pmu.ressource('data/scenario_60_6_2_runs_2'),
                                           force_run=True)
     if 0:
+        data = create_or_load_search_set(pmu.ressource('data/scenario_60_6_2.yaml'),
+                                          nb_searches=10, epochs=[int(1e4)],
+                                          cache_filename=pmu.ressource('data/scenario_60_6_2_runs'),
+                                          force_run=False)
+    else:
         data = update_search_set(cache_filename1=pmu.ressource('data/scenario_60_6_2_runs_1'),
                                  cache_filename2=pmu.ressource('data/scenario_60_6_2_runs_2'))
-        plot_search_set(*data)
+    plot_search_set(*data)
         
     if 0:
         run_many_searches(pmu.ressource('data/scenario_30_1.yaml'),
