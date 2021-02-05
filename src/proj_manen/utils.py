@@ -187,6 +187,21 @@ class Scenario:
 
 
 
+    def fix(self):
+        sols_by_seq = {}
+        print(f'all solutions: {[_s[0] for _s in self.solutions]}')
+        for _s  in self.solutions:
+            _name, _dur, _seq = _s
+            str_seq = format_seq(_seq)
+            #print(str_seq)
+            #pdb.set_trace()
+            if str_seq in sols_by_seq:
+                print(f'dupe {_name} was {sols_by_seq[str_seq][0]}')
+            else:
+                print(f'unique {_name}')
+                sols_by_seq[str_seq] = _s
+
+    
 
 
 
@@ -351,6 +366,10 @@ class ScenarioFactory:
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(5.)}, tv={'kind':'normal', 'mean':5., 'std':0.5})],
         1205: ['scenario_120_5.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=120, tp={'kind':'uniform', 'low':-250, 'high':250})],
+        1206: ['scenario_120_6.yaml', # circle headings normal
+              lambda: make_random_scenario(ntarg=120, dp0=(25,25), dv=15,
+                                           tp={'kind':'circle', 'r':200},
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
     }
 
 
