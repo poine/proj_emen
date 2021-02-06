@@ -9,7 +9,11 @@ import proj_manen as pm, proj_manen.utils as pmu
 
 def _names_of_seq(_s): return [_t.name.split('_')[-1] for _t in _s]
 def _names_of_seq2(_s): foo = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in foo])
-def _print_sol(_e, _t, _bd, _cd, _s): print(f'{_e: 6d}  {_t: 8.2f}  {_bd: 8.2f}  {_cd: 8.2f}   {pmu.format_seq(_s)}')
+def _print_sol(_e, _t, _bd, _cd, _s):
+    if len(_s) < 61:
+        print(f'{_e: 6d}  {_t: 8.2f}  {_bd: 8.2f}  {_cd: 8.2f}   {pmu.format_seq(_s)}')
+    else:
+        print(f'{_e: 6d}  {_t: 8.2f}  {_bd: 8.2f}  {_cd: 8.2f}')
 
 def _mutate(_seq):  # swaping two random stages
     _seq2 = _seq.copy()
@@ -31,7 +35,7 @@ def _exp(e0, n, i): return e0*np.exp(-i/n)
 def _f1(a0, i0, a1, i1, i): return a0 if i<=i0 else a0+(a1-a0)*(i-i0)/(i1-i0) if i <= i1 else a1
 
 
-def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=False, Tf=None, display=0):
+def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=False, Tf=None, display=0, T0=2.):
     if display>0:
         print(f'running simulated annealing with {len(targets)} targets for {ntest:.1e} epochs')
         print(f'  ({ntest/np.math.factorial(len(targets)):.2e} search space coverage)')
@@ -42,7 +46,7 @@ def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=Fal
     best_seq = cur_seq = start_seq
     best_dur = cur_dur = start_dur
     if display>1: last_display = time.perf_counter()
-    if Tf is None: Tf = lambda i: _f1(2, ntest/10, 1e-2, 8*ntest/10, i)
+    if Tf is None: Tf = lambda i: _f1(T0, ntest/10, 1e-2, 8*ntest/10, i)
     if debug: all_durs, kept_durs, Paccept = np.zeros(ntest) , np.zeros(ntest), np.zeros(ntest) 
     for i in range(ntest):
         _s2 = _mutate(cur_seq)

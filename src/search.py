@@ -4,7 +4,7 @@
   Runs search on a scenario
 '''
 
-import sys, argparse, time, matplotlib.pyplot as plt
+import sys, argparse, time, datetime, matplotlib.pyplot as plt
 import pdb
 
 import proj_manen as pm, proj_manen.utils as pmu, proj_manen.simulated_annealing as pm_sa
@@ -21,9 +21,9 @@ def main(filename, method='ex', max_epoch=10000, sol_name=None, save_filename=No
     elif method == 'ex3': # exhaustive improved2
         _drone, _seq = pmu.search_exhaustive_improved2(scen.drone, scen.targets, display=True)
     elif method == 'sa':  # simulated annealing
-        _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=max_epoch, display=2)
+        _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=max_epoch, display=2, T0=5.)
     _end = time.perf_counter()
-    print(f'{sol_name}: {_drone.flight_duration():.2f}s (computed in {_end-_start:.2f}s)')
+    print(f'{sol_name}: {_drone.flight_duration():.2f}s (computed in {datetime.timedelta(seconds=_end-_start)} h:m:s)')
     
     # check
     _drone2, _dur2 = pm.intercept_sequence_copy(scen.drone, _seq)

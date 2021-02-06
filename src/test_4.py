@@ -176,70 +176,70 @@ def plot_search_chronograms(filename, epoch=100000):
     pmu.decorate(ax3, 'Temperature', legend=True)
 
 
-def create_or_load_search_set(scen_filename, nb_searches, epochs, cache_filename, force_run):
-    if force_run:
-        scen = pmu.Scenario(filename=scen_filename)
-        cost_by_ep, seq_by_ep = [],[]
-        for _ep in epochs:
-            print(f'-{_ep} epochs')
-            _drones, _seqs = [],[]
-            for i in range(nb_searches):
-                _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=1)
-                _drones.append(_drone); _seqs.append(_seq)
-                print(f' run {i: 3d}: {_drone.flight_duration():.2f}s')
-            cost_by_run = [_d.flight_duration() for _d in _drones]
-            cost_by_ep.append(cost_by_run)
-            seq_by_ep.append([pmu.format_seq(_s) for _s in _seqs])
-        np.savez(cache_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
-    else:
-        data = np.load(cache_filename+'.npz')
-        cost_by_ep, seq_by_ep, epochs = data['cost_by_ep'], data['seq_by_ep'], data['epochs'] 
+# def create_or_load_search_set(scen_filename, nb_searches, epochs, cache_filename, force_run):
+#     if force_run:
+#         scen = pmu.Scenario(filename=scen_filename)
+#         cost_by_ep, seq_by_ep = [],[]
+#         for _ep in epochs:
+#             print(f'-{_ep} epochs')
+#             _drones, _seqs = [],[]
+#             for i in range(nb_searches):
+#                 _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=1)
+#                 _drones.append(_drone); _seqs.append(_seq)
+#                 print(f' run {i: 3d}: {_drone.flight_duration():.2f}s')
+#             cost_by_run = [_d.flight_duration() for _d in _drones]
+#             cost_by_ep.append(cost_by_run)
+#             seq_by_ep.append([pmu.format_seq(_s) for _s in _seqs])
+#         np.savez(cache_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
+#     else:
+#         data = np.load(cache_filename+'.npz')
+#         cost_by_ep, seq_by_ep, epochs = data['cost_by_ep'], data['seq_by_ep'], data['epochs'] 
 
-    return cost_by_ep, seq_by_ep, epochs
+#     return cost_by_ep, seq_by_ep, epochs
 
-def update_search_set(cache_filename1, cache_filename2, out_filename=None):
-    _cbe1, _sbe1, _e1 = create_or_load_search_set(None, None, None, cache_filename1, False)
-    _cbe2, _sbe2, _e2 = create_or_load_search_set(None, None, None, cache_filename2, False)
-    epochs = np.append(_e1, _e2)
-    cost_by_ep = np.append(_cbe1, _cbe2, axis=0)
-    seq_by_ep = np.append(_sbe1, _sbe2, axis=0)
-    if out_filename is not None:
-        np.savez(out_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
-    return cost_by_ep, seq_by_ep, epochs
+# def update_search_set(cache_filename1, cache_filename2, out_filename=None):
+#     _cbe1, _sbe1, _e1 = create_or_load_search_set(None, None, None, cache_filename1, False)
+#     _cbe2, _sbe2, _e2 = create_or_load_search_set(None, None, None, cache_filename2, False)
+#     epochs = np.append(_e1, _e2)
+#     cost_by_ep = np.append(_cbe1, _cbe2, axis=0)
+#     seq_by_ep = np.append(_sbe1, _sbe2, axis=0)
+#     if out_filename is not None:
+#         np.savez(out_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
+#     return cost_by_ep, seq_by_ep, epochs
 
-def plot_search_set(cost_by_ep, seq_by_ep, epochs, window_title):
-    for e, c in zip(epochs, cost_by_ep):
-        plt.hist(c, label=f'{e}', alpha=0.6)
-    pmu.decorate(plt.gca(), xlab='time in s', legend=True)
+# def plot_search_set(cost_by_ep, seq_by_ep, epochs, window_title):
+#     for e, c in zip(epochs, cost_by_ep):
+#         plt.hist(c, label=f'{e}', alpha=0.6)
+#     pmu.decorate(plt.gca(), xlab='time in s', legend=True)
         
-def analyze_search_set(cost_by_ep, seq_by_ep, epochs, scen_filename=None, add_best=False, add_good=False, overwrite=False):
-    #print(f'{cost_by_ep}\n{seq_by_ep}\n{epochs}')
-    best_idx = np.argmin(cost_by_ep)
-    best_dur, best_seqn = cost_by_ep.flatten()[best_idx], seq_by_ep.flatten()[best_idx]
-    print(f'min cost {best_dur:.3f} {best_seqn}')
-    good_range = 1.1
-    good_idx = cost_by_ep <  best_dur*good_range
-    good_costs, good_seqns = cost_by_ep[good_idx], seq_by_ep[good_idx]
-    #pdb.set_trace()
-    print(f'found {len(good_costs)} solutions within {(good_range-1)*100:.2f}% of optimal')
-    print(f'{good_costs}')
-    if scen_filename is not None:
-        scen = pmu.Scenario(filename=scen_filename)
-        target_by_name = {str(_t.name):_t for _t in scen.targets}
-    def tg_seq_of_names(names):
-        target_names = [f'{_:d}' for _ in [int(_) for _ in names.split('-')]]
-        return [target_by_name[_tn] for _tn in target_names]
+# def analyze_search_set(cost_by_ep, seq_by_ep, epochs, scen_filename=None, add_best=False, add_good=False, overwrite=False):
+#     #print(f'{cost_by_ep}\n{seq_by_ep}\n{epochs}')
+#     best_idx = np.argmin(cost_by_ep)
+#     best_dur, best_seqn = cost_by_ep.flatten()[best_idx], seq_by_ep.flatten()[best_idx]
+#     print(f'min cost {best_dur:.3f} {best_seqn}')
+#     good_range = 1.1
+#     good_idx = cost_by_ep <  best_dur*good_range
+#     good_costs, good_seqns = cost_by_ep[good_idx], seq_by_ep[good_idx]
+#     #pdb.set_trace()
+#     print(f'found {len(good_costs)} solutions within {(good_range-1)*100:.2f}% of optimal')
+#     print(f'{good_costs}')
+#     if scen_filename is not None:
+#         scen = pmu.Scenario(filename=scen_filename)
+#         target_by_name = {str(_t.name):_t for _t in scen.targets}
+#     def tg_seq_of_names(names):
+#         target_names = [f'{_:d}' for _ in [int(_) for _ in names.split('-')]]
+#         return [target_by_name[_tn] for _tn in target_names]
         
-    if add_best:
-        scen.add_solution('bestxx', best_dur, tg_seq_of_names(best_seqn))
-    if add_good:
-        for _i, (_d, _seqn) in enumerate(zip(good_costs, good_seqns)):
-            scen.add_solution(f'best{_i}', _d, tg_seq_of_names(_seqn))
+#     if add_best:
+#         scen.add_solution('bestxx', best_dur, tg_seq_of_names(best_seqn))
+#     if add_good:
+#         for _i, (_d, _seqn) in enumerate(zip(good_costs, good_seqns)):
+#             scen.add_solution(f'best{_i}', _d, tg_seq_of_names(_seqn))
 
-    scen.fix()
+#     #scen.fix()
 
-    if overwrite:
-        scen.save(scen_filename)
+#     if overwrite:
+#         scen.save(scen_filename)
     
     
 def main(id_scen=13):

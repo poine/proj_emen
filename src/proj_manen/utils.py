@@ -4,6 +4,7 @@ import numpy as np, matplotlib.pyplot as plt, yaml, copy, itertools
 import proj_manen as pm
 
 import pdb
+# normalize angles between -pi and pi
 def norm_angles_mpi_pi(_a): return( _a + np.pi) % (2 * np.pi ) - np.pi
 #
 # Project directories
@@ -144,7 +145,7 @@ def load_scenario(filename):
     for _s in solutions: # replace list of target names with references to actual targets
         _s[2] = [_ta_by_name[_tn] for _tn in _s[2]]
     print(f'  {len(targets)} targets, {len(solutions)} known solutions')
-    for _s in solutions: print(f'     {_s[0]:12s}: {_s[1]: 8.2f} s     {format_seq(_s[2])}')
+    for _s in solutions: print(f'     {_s[0]:12s}: {_s[1]: 8.3f} s     {format_seq(_s[2])}')
     return drone, targets, solutions
 
 def save_scenario(filename, drone, targets, solutions=[]):
@@ -171,7 +172,9 @@ class Scenario:
     
     def load(self, filename):
        self.drone, self.targets, self.solutions = load_scenario(filename)
+       self.name = os.path.splitext(os.path.basename(filename))[0]
        self.solutions_by_name = {_s[0]: _s for _s in self.solutions}
+       pdb.set_trace()
 
     def save(self, filename):
         save_scenario(filename, self.drone, self.targets, self.solutions)
@@ -325,9 +328,17 @@ class ScenarioFactory:
                                            tp={'kind':'line', 'len':150},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
         306: ['scenario_30_6.yaml', # circle headings normal
-             lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
+              lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
                                            tp={'kind':'circle', 'r':75},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
+        3061: ['scenario_30_6_1.yaml', # circle headings normal - 100m to be the same as 60 targets
+              lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
+                                           tp={'kind':'circle', 'r':100},
+                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
+        3062: ['scenario_30_6_2.yaml', # circle headings normal with less noise
+               lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
+                                            tp={'kind':'circle', 'r':100},
+                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(5.)}, tv={'kind':'normal', 'mean':5., 'std':0.5})],
         307: ['scenario_30_7.yaml', # circle headings normal, faster
              lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
                                            tp={'kind':'circle', 'r':75},
@@ -340,11 +351,11 @@ class ScenarioFactory:
              lambda: make_random_scenario(ntarg=30, dp0=(-10,-10), dv=15,
                                            tp={'kind':'grid', 'nr':5, 'd':15},
                                            th={'kind':'normal', 'mean':np.deg2rad(25.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
-        50: ['scenario_60_1.yaml', # 60 targets, defaults: uniform law for pos and heading, normal law for speed
+        601: ['scenario_60_1.yaml', # 60 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=60, tp={'kind':'uniform', 'low':-100, 'high':100})],
         602: ['scenario_60_2.yaml', # circle toward
               lambda: make_random_scenario(ntarg=60, dp0=(30,5), dv=15,
-                                           tp={'kind':'circle', 'r':120},
+                                           tp={'kind':'circle', 'r':200},
                                            th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(1.)}, tv=ScenarioFactory._def_tv)],
         603: ['scenario_60_3.yaml', # circle away
               lambda: make_random_scenario(ntarg=60, dp0=(0,0), dv=15,
@@ -364,12 +375,18 @@ class ScenarioFactory:
               lambda: make_random_scenario(ntarg=60, dp0=(25,25), dv=15,
                                            tp={'kind':'circle', 'r':100},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(5.)}, tv={'kind':'normal', 'mean':5., 'std':0.5})],
+        1201: ['scenario_120_1.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
+              lambda: make_random_scenario(ntarg=120, tp={'kind':'uniform', 'low':-250, 'high':250})],
         1205: ['scenario_120_5.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=120, tp={'kind':'uniform', 'low':-250, 'high':250})],
         1206: ['scenario_120_6.yaml', # circle headings normal
               lambda: make_random_scenario(ntarg=120, dp0=(25,25), dv=15,
                                            tp={'kind':'circle', 'r':200},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
+        12062: ['scenario_120_6_2.yaml', # circle headings normal with less noise
+                lambda: make_random_scenario(ntarg=120, dp0=(25,25), dv=15,
+                                             tp={'kind':'circle', 'r':200},
+                                             th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(5.)}, tv={'kind':'normal', 'mean':5., 'std':0.5})],
     }
 
 
