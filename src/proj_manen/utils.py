@@ -24,7 +24,7 @@ def decorate(ax, title=None, xlab=None, ylab=None, legend=None, xlim=None, ylim=
     ax.yaxis.grid(color='k', linestyle='-', linewidth=0.2)
     if xlab: ax.xaxis.set_label_text(xlab)
     if ylab: ax.yaxis.set_label_text(ylab)
-    if title: ax.set_title(title, {'fontsize': 20 })
+    if title: ax.set_title(title, {'fontsize': 15 })
     if legend is not None:
         if legend == True: ax.legend(loc='best')
         else: ax.legend(legend, loc='best')
@@ -42,6 +42,7 @@ def plot_scenario(scen, name='', fig=None, ax=None):
         plot_actor(ax, _t, dt=10., _name='')
     decorate(ax, f'{name}');ax.axis('equal')   
 
+# plot one solution for several scenarios
 def plot_scenarios(scens, names, sol_name=None):
     _n = len(names)
     fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
@@ -49,7 +50,7 @@ def plot_scenarios(scens, names, sol_name=None):
     if _n==1: axes=[axes]
     for _s, _n, _ax in zip(scens, names, axes):
         if sol_name is not None:
-            plot_2d(fig, [_ax], _s, sol_name)
+            plot_solution(fig, _ax, _s, sol_name)
         else:
             plot_scenario(_s, _n, fig, _ax)
         
@@ -61,18 +62,25 @@ def plot_actor(ax, _a, dt=10., _name='', annotate=True):
     #ax.arrow(p0[0], p0[1], vx, vy, color=_dot.get_color(), head_width=v*0.025, head_length=v*0.05, length_includes_head=True)
     ax.plot((p0[0], p1[0]), (p0[1], p1[1]), '--', color=_dot.get_color())
     if annotate: ax.annotate(_a.name, p0, p0+(0, 0.5))
-    
-def plot_2d(fig, axes, scen, names):
-    for name, ax in zip(names, axes):
-        seq = scen.solution_by_name(name)[2]
-        drone, dur = pm.intercept_sequence_copy(scen.drone, seq)
-        #print(f'recomputed {format_seq(seq)} {dur:.2f} ')
-        drone_poss = np.asarray(drone.Xs)
-        ax.plot(drone_poss[:,0], drone_poss[:,1], '-X')
-        for _target, _t in zip(seq, drone.ts[1:]):
-            plot_actor(ax, _target, dt=_t)
-        decorate(ax, f'{name}: {dur:.2f} s'); ax.axis('equal')
 
+# plot a serie of solutions on a single scenario
+def plot_2d(fig, axes, scen, sol_names):
+    for sol_name, ax in zip(sol_names, axes):
+        plot_solution(fig, ax, scen, sol_name)
+
+# plot one solution for one scenario
+def plot_solution(fig, ax, scen, sol_name):
+    seq = scen.solution_by_name(sol_name)[2]
+    drone, dur = pm.intercept_sequence_copy(scen.drone, seq)
+    #print(f'recomputed {format_seq(seq)} {dur:.2f} ')
+    drone_poss = np.asarray(drone.Xs)
+    ax.plot(drone_poss[:,0], drone_poss[:,1], '-X')
+    for _target, _t in zip(seq, drone.ts[1:]):
+        plot_actor(ax, _target, dt=_t)
+    decorate(ax, f'{scen.name}/{sol_name} ({dur:.2f} s)'); ax.axis('equal')
+    
+
+        
 # plot several solution for a single scenario
 def plot_solutions(scen, names, filename=''):
     _n = len(names)
@@ -99,7 +107,8 @@ def make_random_scenario(ntarg, dp0=(10,0), dv=15,
     elif tp['kind'] == 'uniform':
         ps = np.random.uniform(low=tp['low'], high=tp['high'], size=(ntarg,2))
     elif tp['kind'] == 'circle':
-        ps = tp['r']*np.vstack([np.cos(alphas+np.pi), np.sin(alphas+np.pi)]).T
+        (cx, cy), cr = tp.get('center', (0, 0)), tp['r']
+        ps = np.vstack([cx+cr*np.cos(alphas+np.pi), cy+cr*np.sin(alphas+np.pi)]).T
     elif tp['kind'] == 'line':
         ps = np.vstack([-75*np.ones(ntarg), np.linspace(-tp['len'], tp['len'], ntarg)]).T
     elif tp['kind'] == 'grid':
@@ -156,7 +165,7 @@ def save_scenario(filename, drone, targets, solutions=[]):
     _d = drone    
     txt += f'{_d.name}:\n  p0: [{_d.x0},{_d.y0}]\n  v: {_d.v}\n  h: {np.rad2deg(_d.psi)}\n\n'
     if len(solutions)>0:
-        txt += 'solutions:\n'
+        txt += '\nsolutions:\n'
         for _name, _dur, _seq in solutions:
             txt+=f'  {_name}:\n    duration: {_dur}\n    seq: {[_t.name for _t in _seq]}\n'
     with open(filename, 'w') as f:
@@ -174,7 +183,7 @@ class Scenario:
        self.drone, self.targets, self.solutions = load_scenario(filename)
        self.name = os.path.splitext(os.path.basename(filename))[0]
        self.solutions_by_name = {_s[0]: _s for _s in self.solutions}
-       pdb.set_trace()
+       #self.solutions_by_cost = np.array(self.solutions, dtype=object)[np.argsort([_s[1] for _s in self.solutions])]
 
     def save(self, filename):
         save_scenario(filename, self.drone, self.targets, self.solutions)
@@ -182,10 +191,14 @@ class Scenario:
     def add_solution(self, name, dur, seq):
         self.solutions.append([name, dur, seq])
         self.solutions_by_name[name] = self.solutions[-1]
+        # FIXME update self.solutions_by_cost
+        #pdb.set_trace()
 
     def nb_solutions(self): return len(self.solutions)
     
     def solution_by_name(self, name):
+        #if name == '_best': return self.solutions_by_cost[0]
+        #else:
         return self.solutions_by_name[name]
 
 
@@ -205,9 +218,44 @@ class Scenario:
                 sols_by_seq[str_seq] = _s
 
     
+def make_double():
+    _d1, _t1 = make_random_scenario(ntarg=15, dp0=(0,0), dv=15,
+                                    tp={'kind':'circle', 'r':50, 'center':(-100,-20)},
+                                    th={'kind':'normal', 'mean':np.deg2rad(30.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)
+    _d2, _t2 = make_random_scenario(ntarg=15, dp0=(0,0), dv=15,
+                                    tp={'kind':'circle', 'r':50, 'center':( 100,-20)},
+                                    th={'kind':'normal', 'mean':np.deg2rad(150.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)
+
+    l=int(_t1[-1].name)
+    for _t in _t2:
+        _t.name = str(int(_t.name)+l)
+    #pdb.set_trace()
+    return _d1, _t1+_t2
+def make_triple():
+    _d1, _t1 = make_random_scenario(ntarg=10, dp0=(0,0), dv=15,
+                                    tp={'kind':'circle', 'r':50, 'center':(-100,-20)},
+                                    th={'kind':'normal', 'mean':np.deg2rad(30.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)
+    _d2, _t2 = make_random_scenario(ntarg=10, dp0=(0,0), dv=15,
+                                    tp={'kind':'circle', 'r':50, 'center':( 100,-20)},
+                                    th={'kind':'normal', 'mean':np.deg2rad(150.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)
+    _d3, _t3 = make_random_scenario(ntarg=10, dp0=(0,0), dv=15,
+                                    tp={'kind':'circle', 'r':50, 'center':( 0, 140)},
+                                    th={'kind':'normal', 'mean':np.deg2rad(-90), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)
+
+    l=int(_t1[-1].name)
+    for _t in _t2:
+        _t.name = str(int(_t.name)+l)
+    l=int(_t2[-1].name)
+    for _t in _t3:
+        _t.name = str(int(_t.name)+l)
+        
+    #pdb.set_trace()
+    return _d1, _t1+_t2+_t3
 
 
-
+def _normal(_m, _s): return {'kind':'normal', 'mean':_m, 'std':_s}
+def _circle(_r): return {'kind':'circle', 'r':_r}
+def _away(_m=0, _s=0): return {'kind':'away', 'mean':_m, 'std':_s}
 class ScenarioFactory:
     _def_tv = {'kind':'normal', 'mean':5., 'std':0.}
     
@@ -250,31 +298,48 @@ class ScenarioFactory:
                                            tp={'kind':'circle', 'r':75},
                                            th={'kind':'toward', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
         93:  ['scenario_9_3.yaml', # circle away
-              lambda: make_random_scenario(ntarg=9, dp0=(10,0), dv=15,
-                                           tp={'kind':'circle', 'r':25}, th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)})],
+              lambda: make_random_scenario(ntarg=9, dp0=(10,0), dv=15, tp=_circle(25), th=_away(), tv=_normal(5., 0.))],
         94:  ['scenario_9_4.yaml', # line
              lambda: make_random_scenario(ntarg=9, dp0=(30,5), dv=15,
                                            tp={'kind':'line', 'len':50}, th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)})],
+        96: ['scenario_9_6.yaml', # circle headings normal
+             lambda: make_random_scenario(ntarg=9, dp0=(25,25), dv=15,
+                                          tp=_circle(75), th=_normal(0., 0.), tv=_normal(5., 0.))],
         98:  ['scenario_9_8.yaml', # grid 1
              lambda: make_random_scenario(ntarg=9, dp0=(-10,-10), dv=15,
                                            tp={'kind':'grid', 'nr':3, 'd':15},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
         99:  ['scenario_9_9.yaml', # grid 2
-              lambda: make_random_scenario(ntarg=9, dp0=(-10,-10), dv=15,
-                                           tp={'kind':'grid', 'nr':3, 'd':15},
-                                           th={'kind':'normal', 'mean':np.deg2rad(30.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+              lambda: make_random_scenario(ntarg=9, dp0=(-10,-10), dv=15, tp={'kind':'grid', 'nr':3, 'd':15},
+                                           th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
 
         
         101: ['scenario_10_1.yaml', # 10 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=10)],
+        103:  ['scenario_10_3.yaml', # circle away
+               lambda: make_random_scenario(ntarg=10, dp0=(10,0), dv=15, tp=_circle(25), th=_away(), tv=_normal(5., 0.))],
+        104: ['scenario_10_4.yaml', # line
+              lambda: make_random_scenario(ntarg=10, dp0=(30,5), dv=15,
+                                           tp={'kind':'line', 'len':50}, th=_normal(0., 0.), tv=_normal(5., 0.))],
+        106: ['scenario_10_6.yaml', # circle headings normal
+             lambda: make_random_scenario(ntarg=10, dp0=(25,25), dv=15, tp=_circle(75), th=_normal(0., 0.), tv=_normal(5., 0.))],           
         108: ['scenario_10_8.yaml', # grid 1
               lambda: make_random_scenario(ntarg=10, dp0=(-10,-10), dv=15,
                                             tp={'kind':'grid', 'nr':3, 'd':15},
                                             th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
         109: ['scenario_10_9.yaml', # grid 2
-              lambda: make_random_scenario(ntarg=10, dp0=(-10,-10), dv=15,
-                                            tp={'kind':'grid', 'nr':3, 'd':15},
-                                            th={'kind':'normal', 'mean':np.deg2rad(20.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+              lambda: make_random_scenario(ntarg=10, dp0=(-10,-10), dv=15, tp={'kind':'grid', 'nr':3, 'd':15},
+                                           th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+
+        116: ['scenario_11_6.yaml', # circle headings normal
+             lambda: make_random_scenario(ntarg=11, dp0=(25,25), dv=15, tp=_circle(75), th=_normal(0., 0.), tv=_normal(5., 0.))],           
+        119: ['scenario_11_9.yaml', # grid 2
+              lambda: make_random_scenario(ntarg=11, dp0=(-10,-10), dv=15, tp={'kind':'grid', 'nr':3, 'd':15},
+                                           th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+        129: ['scenario_12_9.yaml', # grid 2
+              lambda: make_random_scenario(ntarg=12, dp0=(-10,-10), dv=15, tp={'kind':'grid', 'nr':3, 'd':15},
+                                           th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+
 
         151: ['scenario_15_1.yaml', # 15 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=15)],
@@ -323,14 +388,17 @@ class ScenarioFactory:
               lambda: make_random_scenario(ntarg=30, dp0=(10,0), dv=15,
                                            tp={'kind':'circle', 'r':25},
                                            th={'kind':'away', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+        3031: ['scenario_30_3_1.yaml', # 2 circles
+               lambda: make_double()],
+        3032: ['scenario_30_3_2.yaml', # 3 circles
+               lambda: make_triple()],
         304: ['scenario_30_4.yaml', # line
               lambda: make_random_scenario(ntarg=30, dp0=(50,0), dv=15,
                                            tp={'kind':'line', 'len':150},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
         306: ['scenario_30_6.yaml', # circle headings normal
-              lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
-                                           tp={'kind':'circle', 'r':75},
-                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
+              lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15, tp=_circle(75), th=_normal(0., 0.), tv=_normal(5., 0.))],
+
         3061: ['scenario_30_6_1.yaml', # circle headings normal - 100m to be the same as 60 targets
               lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15,
                                            tp={'kind':'circle', 'r':100},

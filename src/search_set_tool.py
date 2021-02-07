@@ -11,9 +11,8 @@ import proj_manen as pm, proj_manen.utils as pmu, proj_manen.simulated_annealing
 
 
 def _display_run(_ep, id_run, nb_run, _costs):
-    foo = [f'{_:.3f}' for _ in _costs]
     _min, _med, _max = np.min(_costs), np.median(_costs), np.max(_costs)
-    print(f'{_ep} {id_run+1:03d}/{nb_run} min/med/max {_min:.3f} / {_med:.3f} / {_max:.3f}')
+    print(f' {id_run+1:03d}/{nb_run} {_costs[-1]: 8.3f}s min/med/max {_min:.3f} / {_med:.3f} / {_max:.3f}')
 
 def _display_ep(_ep, _costs, cpu_elapsed):
     _min, _med = np.min(_costs), np.median(_costs)
@@ -62,11 +61,11 @@ def plot_search_set(cost_by_ep, seq_by_ep, epochs, window_title):
     pmu.decorate(plt.gca(), xlab='time in s', legend=True)
     plt.gcf().canvas.set_window_title(window_title)
 
-def analyze_search_set(cost_by_ep, seq_by_ep, epochs, ds_filename, add_best=False, scen_filename=None, overwrite=False):
+def analyze_search_set(cost_by_ep, seq_by_ep, epochs, ds_filename, add_best=False, add_good=False, scen_filename=None, overwrite=False):
     best_idx = np.argmin(cost_by_ep)
     best_dur, best_seqn = cost_by_ep.flatten()[best_idx], seq_by_ep.flatten()[best_idx]
     print(f'min cost {best_dur:.3f} {best_seqn}')
-    good_range = 1.05
+    good_range = 1.1
     good_idx = cost_by_ep <  best_dur*good_range
     good_costs, good_seqns = cost_by_ep[good_idx], seq_by_ep[good_idx]
     print(f'found {len(good_costs)} solutions within {(good_range-1)*100:.2f}% of optimal')
@@ -80,13 +79,13 @@ def analyze_search_set(cost_by_ep, seq_by_ep, epochs, ds_filename, add_best=Fals
         
     if add_best:
         scen.add_solution('best', best_dur, tg_seq_of_names(best_seqn))
-    #if add_good:
-    #    for _i, (_d, _seqn) in enumerate(zip(good_costs, good_seqns)):
-    #        scen.add_solution(f'best{_i}', _d, tg_seq_of_names(_seqn))
+    if add_good:
+        for _i, (_d, _seqn) in enumerate(zip(good_costs, good_seqns)):
+            scen.add_solution(f'best__{_i}', _d, tg_seq_of_names(_seqn))
     if overwrite:
         scen.save(scen_filename)
     
-def main(set_filename, create, analyze, show, scen_filename, nb_searches, epochs, overwrite, add_best):
+def main(set_filename, create, analyze, show, scen_filename, nb_searches, epochs, overwrite, add_best, add_good):
     #pdb.set_trace()
     if create:
         print(f'## About to run {nb_searches} searches for {epochs} epochs on {scen_filename}')
@@ -95,7 +94,7 @@ def main(set_filename, create, analyze, show, scen_filename, nb_searches, epochs
     else:
         data = load_search_set(cache_filename=set_filename)
     if analyze:
-        analyze_search_set(*data, set_filename, add_best=add_best, scen_filename=scen_filename, overwrite=overwrite)
+        analyze_search_set(*data, set_filename, add_best=add_best, add_good=add_good, scen_filename=scen_filename, overwrite=overwrite)
         
     if show:
         plot_search_set(*data, set_filename)
@@ -111,10 +110,11 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--epochs', help='epochs')
     parser.add_argument('-a', '--analyze', help='analyze', action='store_true')
     parser.add_argument('-b', '--add_best', help='edit', action='store_true')
+    parser.add_argument('-g', '--add_good', help='edit', action='store_true')
     parser.add_argument('-w', '--overwrite', help='overwrite', action='store_true')
 
     args = parser.parse_args()
     epochs = [int(float(_)) for _ in args.epochs.split(',')] if args.epochs is not None else [] # example: 5e3,1e4
     #pdb.set_trace()
     #epochs = [int(1e3), int(5e3)]#, int(1e4), int(2e4), int(5e4), int(1e5)]
-    main(args.set_filename, args.create, args.analyze, args.show, args.scen_filename, args.nb_run, epochs, args.overwrite, args.add_best)
+    main(args.set_filename, args.create, args.analyze, args.show, args.scen_filename, args.nb_run, epochs, args.overwrite, args.add_best, args.add_good)
