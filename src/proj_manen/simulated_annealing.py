@@ -48,6 +48,8 @@ def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=Fal
     if display>0:
         print(f'running simulated annealing with {len(targets)} targets for {ntest:.1e} epochs')
         print(f'  ({ntest/np.math.factorial(len(targets)):.2e} search space coverage)')
+        if Tf is not None: print('   custom temperature control')
+        else: print(f'  default linear temperature (T0={T0})')
     start_seq = np.random.permutation(targets).tolist()
     start_drone, start_dur = pm.intercept_sequence_copy(drone, start_seq)
     

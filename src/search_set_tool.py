@@ -8,6 +8,7 @@ import argparse, os, time, datetime, numpy as np, matplotlib.pyplot as plt
 import pdb
 
 import proj_manen as pm, proj_manen.utils as pmu, proj_manen.simulated_annealing as pm_sa
+import proj_manen.native_core as pm_nc
 
 
 def _display_run(_ep, id_run, nb_run, _costs):
@@ -18,7 +19,7 @@ def _display_ep(_ep, _costs, cpu_elapsed):
     _min, _med = np.min(_costs), np.median(_costs)
     print(f'{_ep} epochs, min {_min:.3f}s, cpu {datetime.timedelta(seconds=cpu_elapsed)} (h:m:s)')
     
-def create_search_set(scen_filename, nb_searches, epochs, cache_filename):
+def create_search_set(scen_filename, nb_searches, epochs, cache_filename, T0=2.):
     time_tags = []
     time_tags.append(time.perf_counter())
     scen = pmu.Scenario(filename=scen_filename)
@@ -27,7 +28,8 @@ def create_search_set(scen_filename, nb_searches, epochs, cache_filename):
         print(f'-{_ep} epochs')
         _drones, _seqs, _costs = [],[],[]
         for i in range(nb_searches):
-            _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=0)
+            #_drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=0)
+            _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=0, T0=T0, use_native=True)
             _drones.append(_drone); _seqs.append(_seq)
             _costs.append(_drone.flight_duration())
             _display_run(_ep, i, nb_searches, _costs)

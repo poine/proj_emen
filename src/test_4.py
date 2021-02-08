@@ -7,6 +7,8 @@ import os, time, copy, numpy as np, matplotlib.pyplot as plt
 import pdb
 
 import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma, test_3 as pm_t3, proj_manen.simulated_annealing as pm_sa
+import proj_manen.native_core as pm_nc
+
 
 # def _names_of_seq(_s): return [_t.name.split('_')[-1] for _t in _s]
 # def _names_of_seq2(_s): foo = [int(_t.name.split('_')[-1]) for _t in _s]; return '-'.join([f'{_f:02d}' for _f in foo])
@@ -158,22 +160,25 @@ def plot_search_chronograms(filename, epoch=100000):
         #lambda i: aff(150, 0.0005, epoch, i),
         #lambda i: 1e-16,
     ]
-    Ts = [lambda i: pm_sa._f1(2, epoch/10, 1e-2, 9*epoch/10, i)]*5
+    #Ts = [lambda i: pm_sa._f1(2, epoch/10, 1e-2, 9*epoch/10, i)]*5
+    Ts = [lambda i: pm_sa._f1(2, epoch/10, 1e-2, 9*epoch/10, i)]*2+[lambda i: pm_sa._f1(5, epoch/10, 1e-2, 9*epoch/10, i)]*2
 
     ax1, ax2, ax3 = plt.gcf().subplots(3,1, sharex=True)
+    _start = 0#int(9./10*epoch)
     for k, Tf in enumerate(Ts):
-        best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, ntest=epoch, debug=True, Tf=Tf, display=2)
+        #best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, ntest=epoch, debug=True, Tf=Tf, display=2)
+        best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, ntest=epoch, debug=True, Tf=Tf, use_native=True)
         scen.add_solution('sa', best_drone.flight_duration(), best_seq)
         scen.save(f'/tmp/{os.path.basename(filename)}_{best_drone.flight_duration():.2f}')
         #plt.plot(all_durs)
-        ax1.plot(kept_durs, label=f'{k}')
-        ax2.plot(Paccept, label=f'{k}')
-        ax3.plot([Ts[k](i) for i in range(epoch)], label=f'{k}')
+        ax1.plot(kept_durs[_start:], label=f'{k}')
+        ax2.plot(Paccept[_start:], label=f'{k}')
+        ax3.plot([Ts[k](i) for i in range(_start, epoch)], label=f'{k}')
         
         
-    pmu.decorate(ax1, 'Cost', legend=True)#, ylim=(0, 1000))
+    pmu.decorate(ax1, 'Cost', ylab='s', legend=True)#, ylim=(0, 1000))
     pmu.decorate(ax2, 'Paccept', legend=True)
-    pmu.decorate(ax3, 'Temperature', legend=True)
+    pmu.decorate(ax3, 'Temperature', xlab='episode', ylab='s', legend=True)
 
 
 # def create_or_load_search_set(scen_filename, nb_searches, epochs, cache_filename, force_run):
@@ -249,49 +254,50 @@ def main(id_scen=13):
     #play_anim('/tmp/scenario_60_3.yaml_199.77', 'heuristic_refined')
 
 
-    if 0:
-        plot_search_chronograms(filename = pmu.ressource('data/scenario_60_6_2.yaml'), epoch=int(2e4))
-
-    if 0:
-        data = create_or_load_search_set(pmu.ressource('data/scenario_60_6_2.yaml'),
-                                          nb_searches=50, epochs=[int(5e3), int(1e4), int(2e4), int(5e4)],
-                                          cache_filename=pmu.ressource('data/scenario_60_6_2_runs_50'),
-                                          force_run=True)
-    if 0:
-        data = create_or_load_search_set(pmu.ressource('data/scenario_60_6_2.yaml'),
-                                          nb_searches=10, epochs=[int(1e5)],
-                                          cache_filename=pmu.ressource('data/scenario_60_6_2_runs_5'),
-                                          force_run=True)        
     if 1:
-        scen_filename = 'data/scenario_60_6_2.yaml'
-        data = create_or_load_search_set(pmu.ressource(scen_filename),
-                                          nb_searches=10, epochs=[int(1e4)],
-                                          cache_filename=pmu.ressource('data/scenario_60_6_2_runs_50'),
-                                          force_run=False)
-    if 0: # concatenate files
-        scen_filename = 'data/scenario_60_6_2.yaml'
-        data = update_search_set(cache_filename1=pmu.ressource('data/scenario_60_6_2_runs_1'),
-                                 cache_filename2=pmu.ressource('data/scenario_60_6_2_runs_2'),
-                                 out_filename=pmu.ressource('data/scenario_60_6_2_runs'))
-        for _f in ['data/scenario_60_6_2_runs_3', 'data/scenario_60_6_2_runs_4', 'data/scenario_60_6_2_runs_5', 'data/scenario_60_6_2_runs_6']:
-            data = update_search_set(cache_filename1=pmu.ressource('data/scenario_60_6_2_runs'),
-                                 cache_filename2=pmu.ressource(_f),
-                                 out_filename=pmu.ressource('data/scenario_60_6_2_runs'))
-    if 0:
-        data = create_or_load_search_set(pmu.ressource('data/scenario_30_1.yaml'),
-                                         nb_searches=20, epochs=[int(1e3), int(5e3), int(1e4)],
-                                         cache_filename=pmu.ressource('data/scenario_30_1_runs'), force_run=False)
+        plot_search_chronograms(filename = pmu.ressource('data/scenario_30_6_2.yaml'), epoch=int(2e4))
 
-    if 0:
-        data = create_or_load_search_set(pmu.ressource('data/scenario_15_3.yaml'),
-                                         nb_searches=20, epochs=[int(1e3), int(5e3), int(1e4)],
-                                         cache_filename=pmu.ressource('data/scenario_15_3_runs'), force_run=False)
-    if 0:
-        data = create_or_load_search_set(pmu.ressource('data/scenario_9_4.yaml'),
-                                         nb_searches=50, epochs=[int(5e2), int(1e3), int(2e3), int(4e3)],
-                                         cache_filename=pmu.ressource('data/scenario_9_3_runs'), force_run=False)
-    analyze_search_set(*data, scen_filename=pmu.ressource('data/scenario_60_6_2.yaml'), add_best=False, add_good=False, overwrite=False)
-    plot_search_set(*data, scen_filename)
+    # moved to search_set_tool
+    # if 0:
+    #     data = create_or_load_search_set(pmu.ressource('data/scenario_60_6_2.yaml'),
+    #                                       nb_searches=50, epochs=[int(5e3), int(1e4), int(2e4), int(5e4)],
+    #                                       cache_filename=pmu.ressource('data/scenario_60_6_2_runs_50'),
+    #                                       force_run=True)
+    # if 0:
+    #     data = create_or_load_search_set(pmu.ressource('data/scenario_60_6_2.yaml'),
+    #                                       nb_searches=10, epochs=[int(1e5)],
+    #                                       cache_filename=pmu.ressource('data/scenario_60_6_2_runs_5'),
+    #                                       force_run=True)        
+    # if 0:
+    #     scen_filename = 'data/scenario_60_6_2.yaml'
+    #     data = create_or_load_search_set(pmu.ressource(scen_filename),
+    #                                       nb_searches=10, epochs=[int(1e4)],
+    #                                       cache_filename=pmu.ressource('data/scenario_60_6_2_runs_50'),
+    #                                       force_run=False)
+    # if 0: # concatenate files
+    #     scen_filename = 'data/scenario_60_6_2.yaml'
+    #     data = update_search_set(cache_filename1=pmu.ressource('data/scenario_60_6_2_runs_1'),
+    #                              cache_filename2=pmu.ressource('data/scenario_60_6_2_runs_2'),
+    #                              out_filename=pmu.ressource('data/scenario_60_6_2_runs'))
+    #     for _f in ['data/scenario_60_6_2_runs_3', 'data/scenario_60_6_2_runs_4', 'data/scenario_60_6_2_runs_5', 'data/scenario_60_6_2_runs_6']:
+    #         data = update_search_set(cache_filename1=pmu.ressource('data/scenario_60_6_2_runs'),
+    #                              cache_filename2=pmu.ressource(_f),
+    #                              out_filename=pmu.ressource('data/scenario_60_6_2_runs'))
+    # if 0:
+    #     data = create_or_load_search_set(pmu.ressource('data/scenario_30_1.yaml'),
+    #                                      nb_searches=20, epochs=[int(1e3), int(5e3), int(1e4)],
+    #                                      cache_filename=pmu.ressource('data/scenario_30_1_runs'), force_run=False)
+
+    # if 0:
+    #     data = create_or_load_search_set(pmu.ressource('data/scenario_15_3.yaml'),
+    #                                      nb_searches=20, epochs=[int(1e3), int(5e3), int(1e4)],
+    #                                      cache_filename=pmu.ressource('data/scenario_15_3_runs'), force_run=False)
+    # if 0:
+    #     data = create_or_load_search_set(pmu.ressource('data/scenario_9_4.yaml'),
+    #                                      nb_searches=50, epochs=[int(5e2), int(1e3), int(2e3), int(4e3)],
+    #                                      cache_filename=pmu.ressource('data/scenario_9_3_runs'), force_run=False)
+    #analyze_search_set(*data, scen_filename=pmu.ressource('data/scenario_60_6_2.yaml'), add_best=False, add_good=False, overwrite=False)
+    #plot_search_set(*data, scen_filename)
         
     plt.show()
     

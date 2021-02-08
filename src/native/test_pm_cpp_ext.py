@@ -20,7 +20,7 @@ def test1(filename = '../../data/scenario_60_6.yaml'):
     #seq = np.random.permutation(scen.targets).tolist()
     _seq = [_s.name for _s in seq]
     print(_seq)
-    s.run(_seq)
+    s.run_sequence(_seq)
     c_psis = s.debug()
     #print(psis)
     # if 0:
@@ -41,6 +41,15 @@ def test1(filename = '../../data/scenario_60_6.yaml'):
     #pdb.set_trace()
     print(f'Test passed: {passed}')
 
+# hunting the complex root bug
+def test11(filename = '../../data/scenario_120_2_2.yaml'):
+    scen = pmu.Scenario(filename=filename)
+    s = pm_cpp_ext.Solver(scen.drone, scen.targets)
+    for i in range(1):
+        seq = np.random.permutation(scen.targets).tolist()#[:nb_tg]
+        _seq = [_s.name-1 for _s in seq]
+        c_dur = s.run_sequence(_seq);c_psis = s.debug()
+        print(f'intercepted {len(c_psis)} targets')
 
 # compare python and c cost function on a set of random permutations
 def test2(filename = '../../data/scenario_60_6.yaml', nb_tg=60, ntest=100):
@@ -52,7 +61,7 @@ def test2(filename = '../../data/scenario_60_6.yaml', nb_tg=60, ntest=100):
         seq = np.random.permutation(scen.targets).tolist()[:nb_tg]
         _seq = [_s.name-1 for _s in seq]
         #print(_seq)
-        c_dur = s.run(_seq);c_psis = s.debug()
+        c_dur = s.run_sequence(_seq);c_psis = s.debug()
         py_drone, py_dur = pm.intercept_sequence_copy(scen.drone, seq)
 
         #pdb.set_trace()
@@ -71,12 +80,13 @@ def test2(filename = '../../data/scenario_60_6.yaml', nb_tg=60, ntest=100):
             print(f'durations (c/py): {c_dur}, {py_dur}')
         #pdb.set_trace()
 
-
+#
+# intercept a sequence from a scenario
+#
 def test22(filename = '../../data/scenario_60_6.yaml'):
     
     #seq = [30, 47, 12, 20, 39, 36, 28, 29, 18, 2, 41, 24, 35, 54, 58, 23, 53, 11, 4, 15, 10, 9, 34, 43, 44, 45, 42, 14, 37, 17, 19, 52, 8, 33, 48, 27, 56, 5, 55, 21, 59, 26, 40, 50, 49, 7, 22, 31, 38, 25, 57, 32, 3, 60, 6, 13, 51, 46, 16, 1]
     seq = [16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17]
-
     
     scen = pmu.Scenario(filename=filename)
     s = pm_cpp_ext.Solver()
@@ -100,7 +110,7 @@ def test3(filename = '../../data/scenario_60_6.yaml', ntest=1000):
 
     _start = time.perf_counter()
     for i in range(ntest):
-        s.run(seq)
+        s.run_sequence(seq)
     _end = time.perf_counter()
     print(f'{ntest} loops in C took {_end-_start:.3f} s')
 
@@ -110,8 +120,9 @@ def test3(filename = '../../data/scenario_60_6.yaml', ntest=1000):
         scen.drone.clear_traj()
     _end = time.perf_counter()
     print(f'{ntest} loops in Python took {_end-_start:.3f} s')
-
+#
 # search exhaustive
+#
 def test4(filename = '../../data/scenario_9_6.yaml'):
     scen = pmu.Scenario(filename=filename)
     s = pm_cpp_ext.Solver()
@@ -127,7 +138,8 @@ def test4(filename = '../../data/scenario_9_6.yaml'):
     print(f'search in C took {dt:.3f}s ({ips:.2e} cost_evals/s)')
     
 #test1()
+#test11()  # hunting complex root bug: float overflow
 #test2()
 #test22()
-#test3()
-test4()
+test3()   # profiling
+#test4()   # exhaustive search
