@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import numpy as np, matplotlib.pyplot as plt
+import time, numpy as np, matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import itertools
 
@@ -10,24 +10,25 @@ import pdb
 import proj_manen as pm, proj_manen.utils as pmu
 
 # make a side-by-side animation with several solutions of one scenario 
-def animate_solutions(scen, names, tf=1., window_title=None):
+def animate_solutions(scen, names, tf=1., window_title=None, _size=3.84):
 
     sols = [scen.solution_by_name(name) for name in names]
     seqs = [_seq for _1, _2, _seq in sols]
     drones = [pm.intercept_sequence_copy(scen.drone, _seq)[0] for _seq in seqs] 
 
     _n = len(names)
-    fig = plt.figure(tight_layout=True, figsize=[5.12*_n, 5.12])
+    fig = plt.figure(tight_layout=True, figsize=[_size*_n, _size])
     if window_title is not None: fig.canvas.set_window_title(window_title)
 
     axes = fig.subplots(1,_n)#, sharex=True)
     if _n == 1: axes=[axes]
-    return animate_multi(fig, axes, drones, seqs, names, tf=tf)
+    titles = [f'{window_title}/{_n}' for _n in names]
+    return animate_multi(fig, axes, drones, seqs, titles, tf=tf)
 
 # make a side-by-side animation with several scenarios
-def animate_scenarios(scens, sol_names, tf=1.):
+def animate_scenarios(scens, sol_names, tf=1., _size=3.84):
     nr, nc = len(scens), 1
-    fig = plt.figure(tight_layout=True, figsize=[5.12*nc, 5.12*nr])
+    fig = plt.figure(tight_layout=True, figsize=[_size*nc, _size*nr])
     axes = fig.subplots(nr, nc)
     sol_name = sol_names[0]
     drones, seqs, names = [], [], []
@@ -134,13 +135,16 @@ def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xli
 
 def save_animation(anim, filename, dt):
     print('encoding animation video, please wait, it will take a while')
+    _start = time.time()
     #
     if filename.endswith('.mp4'):
         anim.save(filename, writer='ffmpeg', fps=1./dt)
     #    anim.save(filename, fps=1./dt, writer='imagemagick') # fails...
-    elif filename.endswith('.gif'):
+    elif filename.endswith('.gif') or filename.endswith('.webp'):
+        fps = 1./dt; print(f'dt {dt} fps {fps}')
         anim.save(filename, writer=animation.PillowWriter(fps=1./dt)) # gif?
-    print('video encoded, saved to {}, Bye'.format(filename))
+    _end = time.time()
+    print(f'video encoded, saved to {filename}, Bye (took {_end-_start:.1f} s)')
 
 
     

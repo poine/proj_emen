@@ -156,8 +156,8 @@ def load_scenario(filename):
         _s[2] = [_ta_by_name[_tn] for _tn in _s[2]]
     print(f'  {len(targets)} targets, {len(solutions)} known solutions')
     for _s in solutions:
-        if len(targets) < 61: print(f'     {_s[0]:12s}: {_s[1]: 8.3f} s     {format_seq(_s[2])}')
-        else:  print(f'     {_s[0]:12s}: {_s[1]: 8.3f} s     {format_seq(_s[2][:60])}...')
+        if len(targets) < 31: print(f'     {_s[0]:12s}: {_s[1]: 8.3f} s     {format_seq(_s[2])}')
+        else:  print(f'     {_s[0]:12s}: {_s[1]: 8.3f} s     {format_seq(_s[2][:30])}...')
     return drone, targets, solutions
 
 def save_scenario(filename, drone, targets, solutions=[]):
@@ -467,10 +467,14 @@ class ScenarioFactory:
         2406: ['scenario_240_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=240, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
         2409:  ['scenario_240_9.yaml', # grid 2
-                lambda: make_random_scenario(ntarg=240, dp0=(-10,-10), tp={'kind':'grid', 'nr':11, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+                lambda: make_random_scenario(ntarg=240, dp0=(-10,-10), tp={'kind':'grid', 'nr':16, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
 
+        4804: ['scenario_480_4.yaml', # line
+               lambda: make_random_scenario(ntarg=480, dp0=(50,0), tp=_line(150, (-100,0)), th=_normal(np.deg2rad(0.), 0.), tv=_normal(5., 0.))],
         4806: ['scenario_480_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=480, tp=_circle(300),  th=_normal(0., 0.), tv=_normal(5., 0.))],
+        4809: ['scenario_480_9.yaml', # grid 2
+                lambda: make_random_scenario(ntarg=480, dp0=(-10,-10), tp={'kind':'grid', 'nr':22, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
         9606: ['scenario_960_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=960, tp=_circle(300),  th=_normal(0., 0.), tv=_normal(5., 0.))],
         19206: ['scenario_1920_6.yaml', # circle headings parallel

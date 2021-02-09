@@ -111,7 +111,7 @@ def main(set_filenames, create, analyze, show, scen_filename, nb_searches, epoch
         analyze_search_set(*data, set_filenames[0], add_best=add_best, add_good=add_good, scen_filename=scen_filename, overwrite=overwrite)
         
     if show:
-        plot_search_set(*data, os.path.basename(set_filenames[0]), skip=3)
+        plot_search_set(*data, os.path.basename(set_filenames[0]), skip=0)
         plt.show()
         
 if __name__ == '__main__':

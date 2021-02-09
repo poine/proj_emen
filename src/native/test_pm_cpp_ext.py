@@ -102,24 +102,27 @@ def test22(filename = '../../data/scenario_60_6.yaml'):
 #
 # Profiling: x200?
 #
-def test3(filename = '../../data/scenario_60_6.yaml', ntest=1000):
+def test3(filename = '../../data/scenario_240_6.yaml', ntest=1000):
     scen = pmu.Scenario(filename=filename)
-    s = pm_cpp_ext.Solver()
-    s.init(scen.drone, scen.targets)
+    s = pm_cpp_ext.Solver(scen.drone, scen.targets)
     seq = [_s.name for _s in scen.targets]
 
-    _start = time.perf_counter()
+    _start1 = time.perf_counter()
     for i in range(ntest):
         s.run_sequence(seq)
-    _end = time.perf_counter()
-    print(f'{ntest} loops in C took {_end-_start:.3f} s')
+    _end1 = time.perf_counter()
+    _dt1 = _end1-_start1
+    print(f'{ntest} evaluations in C took {_dt1:.3f} s')
 
-    _start = time.perf_counter()
+    _start2 = time.perf_counter()
     for i in range(ntest):
         pm.intercept_sequence(scen.drone, scen.targets)
         scen.drone.clear_traj()
-    _end = time.perf_counter()
-    print(f'{ntest} loops in Python took {_end-_start:.3f} s')
+    _end2 = time.perf_counter()
+    _dt2 = _end2-_start2 
+    print(f'{ntest} evaluations in Python took {_dt2:.3f} s')
+    print(f'improvement {_dt2/_dt1:.1f}')
+    
 #
 # search exhaustive
 #
@@ -130,16 +133,17 @@ def test4(filename = '../../data/scenario_9_6.yaml'):
     n_targ = len(scen.targets); n_seq= np.math.factorial(n_targ)
     print(f'searching in all {n_targ} targets permutations ({n_seq:.2e})')
     _start = time.perf_counter()
-    best_cost, best_seq = s.run_all()
+    best_cost, best_seq = s.run_exhaustive()
     _end = time.perf_counter()
     dt = _end-_start; ips = n_seq/dt
     print(f'best cost: {best_cost}')
     print(best_seq)
     print(f'search in C took {dt:.3f}s ({ips:.2e} cost_evals/s)')
+
     
 #test1()
 #test11()  # hunting complex root bug: float overflow
 #test2()
 #test22()
-test3()   # profiling
-#test4()   # exhaustive search
+#test3()   # profiling cost evaluation
+test4()   # exhaustive search
