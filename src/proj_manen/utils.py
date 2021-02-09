@@ -382,9 +382,7 @@ class ScenarioFactory:
                               make_random_scenario(ntarg=20, dp0=(10,0), dv=15, tp=_circle(75), th=_normal(np.deg2rad(20.), 0.))))],
         
         304: ['scenario_30_4.yaml', # line
-              lambda: make_random_scenario(ntarg=30, dp0=(50,0), dv=15,
-                                           tp={'kind':'line', 'len':150},
-                                           th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv=ScenarioFactory._def_tv)],
+              lambda: make_random_scenario(ntarg=30, dp0=(50,0), tp=_line(150, (-100,0)), th=_normal(np.deg2rad(0.), 0.), tv=_normal(5., 0.))],
         306: ['scenario_30_6.yaml', # circle headings normal
               lambda: make_random_scenario(ntarg=30, dp0=(25,25), dv=15, tp=_circle(75), th=_normal(0., 0.), tv=_normal(5., 0.))],
 
@@ -405,9 +403,7 @@ class ScenarioFactory:
                                            tp={'kind':'grid', 'nr':5, 'd':15},
                                            th={'kind':'normal', 'mean':np.deg2rad(0.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
         309: ['scenario_30_9.yaml', # grid 2
-             lambda: make_random_scenario(ntarg=30, dp0=(-10,-10), dv=15,
-                                           tp={'kind':'grid', 'nr':5, 'd':15},
-                                           th={'kind':'normal', 'mean':np.deg2rad(25.), 'std':np.deg2rad(0.)}, tv={'kind':'normal', 'mean':5., 'std':0.})],
+             lambda: make_random_scenario(ntarg=30, dp0=(-10,-10), tp={'kind':'grid', 'nr':5, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
         601: ['scenario_60_1.yaml', # 60 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=60, tp={'kind':'uniform', 'low':-100, 'high':100})],
         602: ['scenario_60_2.yaml', # circle toward skewed
@@ -444,8 +440,7 @@ class ScenarioFactory:
                               make_random_scenario(ntarg=20,                   tp=_circle(75, (-150, -50)), th=_normal(np.deg2rad(0.), 0.))))],
 
         609:  ['scenario_60_9.yaml', # grid 2
-               lambda: make_random_scenario(ntarg=60, dp0=(-10,-10), dv=15, tp={'kind':'grid', 'nr':8, 'd':15},
-                                            th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+               lambda: make_random_scenario(ntarg=60, dp0=(-10,-10), tp={'kind':'grid', 'nr':8, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
 
         
         1201: ['scenario_120_1.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
@@ -456,25 +451,31 @@ class ScenarioFactory:
         12022: ['scenario_120_2_2.yaml', # circle toward skewed + line
                 lambda: merge((make_random_scenario(ntarg=80, tp=_circle(100, (0,0)), th=_toward(np.deg2rad(45.), np.deg2rad(0.)),  tv=_normal(5., 0.)),
                                make_random_scenario(ntarg=40, tp=_line(100), th=_normal(np.deg2rad(0.), np.deg2rad(0.)),  tv=_normal(5., 0.))))],
+        1204: ['scenario_120_4.yaml', # line
+               lambda: make_random_scenario(ntarg=120, dp0=(50,0), tp=_line(150, (-100,0)), th=_normal(np.deg2rad(0.), 0.), tv=_normal(5., 0.))],
         1205: ['scenario_120_5.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=120, tp={'kind':'uniform', 'low':-250, 'high':250})],
         1206: ['scenario_120_6.yaml', # circle headings normal
                lambda: make_random_scenario(ntarg=120, tp=_circle(200), th=_normal(0., 0.), tv=_normal(5., 0.))],
         1209:  ['scenario_120_9.yaml', # grid 2
-                lambda: make_random_scenario(ntarg=120, dp0=(-10,-10), dv=15, tp={'kind':'grid', 'nr':11, 'd':15},
-                                             th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+                lambda: make_random_scenario(ntarg=120, dp0=(-10,-10), tp={'kind':'grid', 'nr':11, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+        
         2402: ['scenario_240_2.yaml', # circle toward
                lambda: make_random_scenario(ntarg=240, tp=_circle(200, (0,0)), th=_toward(np.deg2rad(45.), np.deg2rad(0.)),  tv=_normal(5., 0.))],
-
-        2406: ['scenario_240_6.yaml', # circle headings normal
+        2404: ['scenario_240_4.yaml', # line
+               lambda: make_random_scenario(ntarg=240, dp0=(50,0), tp=_line(150, (-100,0)), th=_normal(np.deg2rad(0.), 0.), tv=_normal(5., 0.))],
+        2406: ['scenario_240_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=240, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
-        4806: ['scenario_480_6.yaml', # circle headings normal
-               lambda: make_random_scenario(ntarg=480, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
-        9606: ['scenario_960_6.yaml', # circle headings normal
-               lambda: make_random_scenario(ntarg=960, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
-        19206: ['scenario_1920_6.yaml', # circle headings normal
+        2409:  ['scenario_240_9.yaml', # grid 2
+                lambda: make_random_scenario(ntarg=240, dp0=(-10,-10), tp={'kind':'grid', 'nr':11, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+
+        4806: ['scenario_480_6.yaml', # circle headings parallel
+               lambda: make_random_scenario(ntarg=480, tp=_circle(300),  th=_normal(0., 0.), tv=_normal(5., 0.))],
+        9606: ['scenario_960_6.yaml', # circle headings parallel
+               lambda: make_random_scenario(ntarg=960, tp=_circle(300),  th=_normal(0., 0.), tv=_normal(5., 0.))],
+        19206: ['scenario_1920_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=1920, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
-        38406: ['scenario_3840_6.yaml', # circle headings normal
+        38406: ['scenario_3840_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=3840, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
     }
 

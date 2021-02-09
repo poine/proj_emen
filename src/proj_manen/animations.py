@@ -134,9 +134,12 @@ def animate_multi(fig, axes, drones, targets, names, t0=0., t1=None, dt=0.1, xli
 
 def save_animation(anim, filename, dt):
     print('encoding animation video, please wait, it will take a while')
-    anim.save(filename, writer='ffmpeg', fps=1./dt)
-    #anim.save(filename, fps=1./dt, writer='imagemagick') # fails...
-    #anim.save(filename, writer=matplotlib.animation.PillowWriter(fps=1./dt)) # gif?
+    #
+    if filename.endswith('.mp4'):
+        anim.save(filename, writer='ffmpeg', fps=1./dt)
+    #    anim.save(filename, fps=1./dt, writer='imagemagick') # fails...
+    elif filename.endswith('.gif'):
+        anim.save(filename, writer=animation.PillowWriter(fps=1./dt)) # gif?
     print('video encoded, saved to {}, Bye'.format(filename))
 
 

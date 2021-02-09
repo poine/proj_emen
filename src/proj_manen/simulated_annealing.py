@@ -43,8 +43,9 @@ except ImportError:
 
 def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=False, Tf=None, display=0, T0=2., use_native=False):
     if use_native:
-        s = pm_cpp_ext.Solver()
-        s.init(drone, targets)
+        solver = pm_cpp_ext.Solver(drone, targets)
+    else:
+        solver = pm
     if display>0:
         print(f'running simulated annealing with {len(targets)} targets for {ntest:.1e} epochs')
         print(f'  ({ntest/np.math.factorial(len(targets)):.2e} search space coverage)')
@@ -61,14 +62,10 @@ def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=Fal
     if debug: all_durs, kept_durs, Paccept = np.zeros(ntest) , np.zeros(ntest), np.zeros(ntest) 
     for i in range(ntest):
         _s2 = _mutate(cur_seq)
-        if use_native:
-            _d2, _dur = s.intercept_sequence_copy(drone, _s2)
-        else:
-            _d2, _dur = pm.intercept_sequence_copy(drone, _s2)
+        _d2, _dur = solver.intercept_sequence_copy(drone, _s2)
         if debug: all_durs[i] = _dur
         if _dur < best_dur:
             best_dur, best_drone, best_seq = _dur, _d2, _s2
-            #_print_sol(best_dur, best_seq)
         T = Tf(i)
         acc_prob = np.exp(-(_dur-cur_dur)/T) if _dur > cur_dur else 0. # warning 1, but 0 looks nicer on plot
         if debug: Paccept[i] = acc_prob

@@ -25,7 +25,7 @@ def create_search_set(scen_filename, nb_searches, epochs, cache_filename, T0=2.)
     scen = pmu.Scenario(filename=scen_filename)
     cost_by_ep, seq_by_ep = [],[]
     for _ep in epochs:
-        print(f'-{_ep} epochs')
+        print(f'-{_ep:e} epochs')
         _drones, _seqs, _costs = [],[],[]
         for i in range(nb_searches):
             #_drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=0)
@@ -47,27 +47,17 @@ def load_search_set(cache_filename):
     cost_by_ep, seq_by_ep, epochs = data['cost_by_ep'], data['seq_by_ep'], data['epochs'] 
     return cost_by_ep, seq_by_ep, epochs
 
-def update_search_set(cache_filename1, cache_filename2, out_filename=None):
-    _cbe1, _sbe1, _e1 = create_or_load_search_set(None, None, None, cache_filename1, False)
-    _cbe2, _sbe2, _e2 = create_or_load_search_set(None, None, None, cache_filename2, False)
-    epochs = np.append(_e1, _e2)
-    cost_by_ep = np.append(_cbe1, _cbe2, axis=0)
-    seq_by_ep = np.append(_sbe1, _sbe2, axis=0)
-    if out_filename is not None:
-        np.savez(out_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
-    return cost_by_ep, seq_by_ep, epochs
-
-def plot_search_set(cost_by_ep, seq_by_ep, epochs, window_title):
-    for e, c in zip(epochs, cost_by_ep):
+def plot_search_set(cost_by_ep, seq_by_ep, epochs, window_title, skip=0):
+    for e, c in zip(epochs[skip:], cost_by_ep[skip:]):
         plt.hist(c, label=f'{e/1000} k epochs', alpha=0.6)
-    pmu.decorate(plt.gca(), xlab='time in s', legend=True)
+    pmu.decorate(plt.gca(), title=window_title, xlab='time in s', legend=True)
     plt.gcf().canvas.set_window_title(window_title)
 
 def analyze_search_set(cost_by_ep, seq_by_ep, epochs, ds_filename, add_best=False, add_good=False, scen_filename=None, overwrite=False):
     best_idx = np.argmin(cost_by_ep)
     best_dur, best_seqn = cost_by_ep.flatten()[best_idx], seq_by_ep.flatten()[best_idx]
     print(f'min cost {best_dur:.3f} {best_seqn}')
-    good_range = 1.1
+    good_range = 1.01
     good_idx = cost_by_ep <  best_dur*good_range
     good_costs, good_seqns = cost_by_ep[good_idx], seq_by_ep[good_idx]
     print(f'found {len(good_costs)} solutions within {(good_range-1)*100:.2f}% of optimal')
@@ -86,25 +76,47 @@ def analyze_search_set(cost_by_ep, seq_by_ep, epochs, ds_filename, add_best=Fals
             scen.add_solution(f'best__{_i}', _d, tg_seq_of_names(_seqn))
     if overwrite:
         scen.save(scen_filename)
-    
-def main(set_filename, create, analyze, show, scen_filename, nb_searches, epochs, overwrite, add_best, add_good):
+
+
+# def update_search_set(cache_filename1, cache_filename2, out_filename=None):
+#     _cbe1, _sbe1, _e1 = create_or_load_search_set(None, None, None, cache_filename1, False)
+#     _cbe2, _sbe2, _e2 = create_or_load_search_set(None, None, None, cache_filename2, False)
+#     epochs = np.append(_e1, _e2)
+#     cost_by_ep = np.append(_cbe1, _cbe2, axis=0)
+#     seq_by_ep = np.append(_sbe1, _sbe2, axis=0)
+#     if out_filename is not None:
+#         np.savez(out_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
+#     return cost_by_ep, seq_by_ep, epochs
+
+def merge_search_set(d1, d2):
+    (_cbe1, _sbe1, _e1), (_cbe2, _sbe2, _e2) = d1, d2
+    epochs = np.append(_e1, _e2)
+    cost_by_ep = np.append(_cbe1, _cbe2, axis=0)
+    seq_by_ep = np.append(_sbe1, _sbe2, axis=0)
     #pdb.set_trace()
+    return cost_by_ep, seq_by_ep, epochs
+
+
+def main(set_filenames, create, analyze, show, scen_filename, nb_searches, epochs, overwrite, add_best, add_good):
     if create:
         print(f'## About to run {nb_searches} searches for {epochs} epochs on {scen_filename}')
-        print(f'## results will be stored in {set_filename}')
-        data = create_search_set(scen_filename, nb_searches, epochs, set_filename)
+        print(f'## results will be stored in {set_filenames[0]}')
+        data = create_search_set(scen_filename, nb_searches, epochs, set_filenames[0])
     else:
-        data = load_search_set(cache_filename=set_filename)
+        data = load_search_set(cache_filename=set_filenames[0])
+        for sf in set_filenames[1:]:
+            data = merge_search_set(data, load_search_set(cache_filename=sf))
+
     if analyze:
-        analyze_search_set(*data, set_filename, add_best=add_best, add_good=add_good, scen_filename=scen_filename, overwrite=overwrite)
+        analyze_search_set(*data, set_filenames[0], add_best=add_best, add_good=add_good, scen_filename=scen_filename, overwrite=overwrite)
         
     if show:
-        plot_search_set(*data, set_filename)
+        plot_search_set(*data, os.path.basename(set_filenames[0]), skip=3)
         plt.show()
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Manipulate s search set.')
-    parser.add_argument('set_filename')
+    parser.add_argument('set_filename', nargs='*')
     parser.add_argument('-x', '--show', help='show', action='store_true')
     parser.add_argument('-c', '--create', help='create', action='store_true')
     parser.add_argument('-s', '--scen_filename', help='scenario filename')

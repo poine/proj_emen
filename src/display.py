@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 '''
-  Display a scenario
+  Display scenarios and solutions, as plot or animation
 '''
 
 import sys, argparse, os, time, copy, numpy as np, matplotlib.pyplot as plt
@@ -29,7 +29,9 @@ def main(filenames, sol_names,  anim=False, tf=1., save_anim=False):
                 pmu.plot_solutions(scen, sol_names, filename)
     plt.show()
     if save_anim:
-        pma.save_animation(anim, '/tmp/anim.mp4', dt=0.1/tf)
+        #pma.save_animation(anim, '/tmp/anim.mp4', dt=0.1/tf)
+        #pma.save_animation(anim, '/tmp/anim.gif', dt=0.1/tf)
+        pma.save_animation(anim, '/tmp/anim.webp', dt=0.1/tf)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Display a scenario.')
