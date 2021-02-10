@@ -11,7 +11,7 @@ import proj_manen.utils as pmu
 try:
     import pm_cpp_ext
 except ImportError:
-    print('proj_manen.simulated_annealing: failed to import native code')
+    print('sample random population: failed to import native code')
 
 def mmmm(_v): return np.min(_v), np.max(_v), np.mean(_v), np.median(_v)
 def _fmt_mmmm2(_v):
@@ -53,7 +53,7 @@ def sample_solutions(filenames, nb_samples=int(1e5), force_recompute=False, use_
         pmu.decorate(ax, _fmt_mmmm2(_d), xlab='time in s', legend=True)
 
     for ax, _scen in zip(axes_2d, _scens):
-        pmu.plot_scenario(_scen, title=_scen.name, annotate=False, fig=fig, ax=ax)
+        pmu.plot_scenario(_scen, title=f'scenario: {_scen.name}', annotate=False, fig=fig, ax=ax)
 
 
     

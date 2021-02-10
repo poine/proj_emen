@@ -15,11 +15,11 @@ from libcpp cimport bool
 from libcpp.vector cimport vector
 
 cdef extern from "pm/pm.h":
+    ctypedef float PmType
     cdef cppclass c_Solver "Solver":
         c_Solver()
-        #bool init(float* dp, float dv, vector[float] tx, vector[float] ty, vector[float] tv, vector[float] th)
-        bool init(double* dp, float dv, vector[double] tx, vector[double] ty, vector[float] tv, vector[float] th)
-        float run_sequence(vector[int] seq)
+        bool init(PmType* dp, float dv, vector[PmType] tx, vector[PmType] ty, vector[float] tv, vector[float] th)
+        PmType run_sequence(vector[int] seq)
         float run_exhaustive(vector[int] &best_seq)
         vector[float] get_psis()
 
@@ -32,16 +32,13 @@ cdef class Solver:
             self.init(drone, targets)
         
     def init(self, drone, targets):
-        #cdef float dp[2]
-        cdef double dp[2]
+        cdef PmType dp[2]
         cdef float dv
         dp[0] = drone.p0[0]
         dp[1] = drone.p0[1]
         dv = drone.v
-        #cdef vector[float] tx
-        #cdef vector[float] ty
-        cdef vector[double] tx
-        cdef vector[double] ty
+        cdef vector[PmType] tx
+        cdef vector[PmType] ty
         cdef vector[float] tv
         cdef vector[float] th
         for _t in targets:

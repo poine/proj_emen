@@ -42,14 +42,15 @@ def test1(filename = '../../data/scenario_60_6.yaml'):
     print(f'Test passed: {passed}')
 
 # hunting the complex root bug
-def test11(filename = '../../data/scenario_120_2_2.yaml'):
+def test11(filename = '../../data/scen_7820/1.yaml'):#'../../data/scenario_120_2_2.yaml'):
     scen = pmu.Scenario(filename=filename)
     s = pm_cpp_ext.Solver(scen.drone, scen.targets)
     for i in range(1):
-        seq = np.random.permutation(scen.targets).tolist()#[:nb_tg]
+        #seq = np.random.permutation(scen.targets).tolist()#[:nb_tg]
+        seq = scen.targets
         _seq = [_s.name-1 for _s in seq]
         c_dur = s.run_sequence(_seq);c_psis = s.debug()
-        print(f'intercepted {len(c_psis)} targets')
+        print(f'intercepted {len(c_psis)} targets ({c_dur} s)')
 
 # compare python and c cost function on a set of random permutations
 def test2(filename = '../../data/scenario_60_6.yaml', nb_tg=60, ntest=100):
@@ -67,7 +68,8 @@ def test2(filename = '../../data/scenario_60_6.yaml', nb_tg=60, ntest=100):
         #pdb.set_trace()
         c_psis1 = [pmu.norm_angles_mpi_pi(_psi) for _psi in c_psis]
         p_psis1 = [pmu.norm_angles_mpi_pi(_psi) for _psi in py_drone.psis]
-        passed1 = np.allclose(c_psis1, p_psis1, rtol=1e-02, atol=1e-03) # rtol=1e-05, atol=1e-08
+        #passed1 = np.allclose(c_psis1, p_psis1, rtol=1e-02, atol=1e-03) # rtol=1e-05, atol=1e-08
+        passed1 = np.allclose(c_psis1, p_psis1, rtol=1e-03, atol=1e-08) # rtol=1e-05, atol=1e-08
         #passed1 = np.allclose(c_psis, py_drone.psis, rtol=1e-05, atol=1e-06) # rtol=1e-05, atol=1e-08
         passed2 = np.allclose(c_dur, py_dur, rtol=1e-05, atol=1e-06)
         print(f'Test passed: {passed1} {passed2}')
@@ -142,8 +144,8 @@ def test4(filename = '../../data/scenario_9_6.yaml'):
 
     
 #test1()
-#test11()  # hunting complex root bug: float overflow
-#test2()
+test11()  # hunting complex root bug: float overflow
+#test2('../../data/scen_60/1.yaml')
 #test22()
 #test3()   # profiling cost evaluation
-test4()   # exhaustive search
+#test4()   # exhaustive search

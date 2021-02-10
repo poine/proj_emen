@@ -73,7 +73,7 @@ def plot_search_chronograms(filename, epoch, nrun, force=False):
     # default lin
     #Ts = [lambda i: pm_sa._aff(1, 1e-2, epoch, i)]
 
-    cache_filename = f'/tmp/psc_{os.path.basename(filename)}_{epoch}.npz'
+    cache_filename = f'/tmp/psc_{scen.name}_{epoch}.npz'
     if force or not os.path.exists(cache_filename):
         print(f'running optimizations and storing to {cache_filename}')
         res = []
@@ -136,14 +136,15 @@ def main(id_scen=13):
     
     #plot_search_chronograms(filename = pmu.ressource('data/scenario_30_1.yaml'), epoch=int(2e4), nrun=50, force=False)
     #plot_search_chronograms(filename = pmu.ressource('data/scenario_30_2.yaml'), epoch=int(3e4), nrun=50, force=False)
-    #plot_search_chronograms(filename = pmu.ressource('data/scenario_30_4.yaml'), epoch=int(2e4), nrun=50, force=False)
+    plot_search_chronograms(filename = pmu.ressource('data/scen_30/4.yaml'), epoch=int(2e4), nrun=50, force=False)
+    #plot_search_chronograms(filename = pmu.ressource('data/scen_60/9_1.yaml'), epoch=int(5e4), nrun=25, force=False)
     #sample_solutions(['../data/scenario_30_1.yaml'], nb_samples=int(1e5))
     #sample_solutions(['../data/scenario_30_2.yaml'], nb_samples=int(1e5))
     #sample_solutions(['../data/scenario_30_4.yaml', '../data/scenario_30_6.yaml', '../data/scenario_30_9.yaml'], nb_samples=int(1e5))
 
 
     def _sample_for_size(size, ids, nb_samples):
-        filenames = [pmu.ressource(f'data/scenario_{size}_{_id}.yaml') for _id in ids]
+        filenames = [pmu.ressource(f'data/scen_{size}/{_id}.yaml') for _id in ids]
         srp.sample_solutions(filenames, nb_samples)
         
     #_sample_for_size(15, [1, 2, 3, 4, 6, 9], int(1e5))
@@ -151,7 +152,8 @@ def main(id_scen=13):
     #_sample_for_size(60, [1, 2, 3, 4, 6, 9], int(1e5))
     #_sample_for_size(120, [1, 2, 3, 4, 6, 9], int(1e5))
     #_sample_for_size(240, [1, 4, 6, 9], int(1e5)) # fails for scen 2 and 3
-    _sample_for_size(480, [1, 4, 6, 9], int(1e5)) # fails for scen 2 and 3
+    #_sample_for_size(480, [4, 6, 9], int(1e5)) # fails for scen 1, 2 and 3
+    #_sample_for_size(960, [4, 6, 9], int(1e5)) # fails for scen 1, 2 and 3
     
     plt.show()
     

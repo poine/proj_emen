@@ -111,7 +111,8 @@ def make_random_scenario(ntarg, dp0=(10,0), dv=15,
         ps = np.vstack([cx+cr*np.cos(alphas+np.pi), cy+cr*np.sin(alphas+np.pi)]).T
     elif tp['kind'] == 'line':
         (cx,cy), gamma = tp.get('center', (-75, 0)), tp.get('gamma', np.pi/2)
-        ps = np.vstack([cx+np.cos(gamma)*np.linspace(-tp['len'], tp['len'], ntarg), cy+np.sin(gamma)*np.linspace(-tp['len'], tp['len'], ntarg)]).T
+        _l = np.linspace(-tp['len'], tp['len'], ntarg)
+        ps = np.vstack([cx+np.cos(gamma)*_l, cy+np.sin(gamma)*_l]).T
     elif tp['kind'] == 'grid':
         ps = tp['d']*np.array([np.divmod(i, tp['nr']) for i in range(ntarg)])
 
@@ -124,6 +125,7 @@ def make_random_scenario(ntarg, dp0=(10,0), dv=15,
         hs = norm_angles_mpi_pi(alphas + np.random.normal(loc=th['mean'], scale=th['std'], size=ntarg))
     elif th['kind'] == 'away':
         hs = norm_angles_mpi_pi(alphas + np.pi+ np.random.normal(loc=th['mean'], scale=th['std'], size=ntarg))
+
     # Velocities
     if tv['kind'] == 'normal':
         vs = np.random.normal(loc=tv['mean'], scale=tv['std'], size=ntarg)
@@ -433,6 +435,8 @@ class ScenarioFactory:
 
         609:  ['scenario_60_9.yaml', # grid 2
                lambda: make_random_scenario(ntarg=60, dp0=(-10,-10), tp={'kind':'grid', 'nr':8, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+        609_1:  ['scenario_60_9_1.yaml', # grid 2 with noise
+               lambda: make_random_scenario(ntarg=60, dp0=(-10,-10), tp={'kind':'grid', 'nr':8, 'd':15}, th=_normal(np.deg2rad(20.), np.deg2rad(10.)), tv=_normal(5., 0.5))],
 
         
         1201: ['scenario_120_1.yaml', # 120 targets, defaults: uniform law for pos and heading, normal law for speed
@@ -455,7 +459,7 @@ class ScenarioFactory:
                 lambda: make_random_scenario(ntarg=120, dp0=(-10,-10), tp={'kind':'grid', 'nr':11, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
         
         2401: ['scenario_240_1.yaml', # 240 targets, defaults: uniform law for pos and heading, normal law for speed
-              lambda: make_random_scenario(ntarg=120, tp={'kind':'uniform', 'low':-250, 'high':250})],
+              lambda: make_random_scenario(ntarg=240, tp={'kind':'uniform', 'low':-250, 'high':250})],
         2402: ['scenario_240_2.yaml', # circle toward
                lambda: make_random_scenario(ntarg=240, tp=_circle(200, (0,0)), th=_toward(np.deg2rad(45.), np.deg2rad(0.)),  tv=_normal(5., 0.))],
         2403: ['scenario_240_3.yaml', # circle away
@@ -476,16 +480,27 @@ class ScenarioFactory:
         4809: ['scenario_480_9.yaml', # grid 2
                 lambda: make_random_scenario(ntarg=480, dp0=(-10,-10), tp={'kind':'grid', 'nr':22, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
 
+        9601: ['scenario_960_1.yaml', # 960 targets, defaults: uniform law for pos and heading, normal law for speed
+              lambda: make_random_scenario(ntarg=960, tp={'kind':'uniform', 'low':-250, 'high':250})],
         9604: ['scenario_960_4.yaml', # line
                lambda: make_random_scenario(ntarg=960, dp0=(50,0), tp=_line(150, (-100,0)), th=_normal(np.deg2rad(0.), 0.), tv=_normal(5., 0.))],
         9606: ['scenario_960_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=960, tp=_circle(300),  th=_normal(0., 0.), tv=_normal(5., 0.))],
         9609: ['scenario_960_9.yaml', # grid 2
                lambda: make_random_scenario(ntarg=960, dp0=(-10,-10), tp={'kind':'grid', 'nr':31, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+        19201: ['scenario_1920_1.yaml', # 1920 targets, defaults: uniform law for pos and heading, normal law for speed
+              lambda: make_random_scenario(ntarg=1920, tp={'kind':'uniform', 'low':-250, 'high':250})],
         19206: ['scenario_1920_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=1920, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
+
+        38401: ['scenario_3840_1.yaml', # 3840 targets, defaults: uniform law for pos and heading, normal law for speed
+              lambda: make_random_scenario(ntarg=3840, tp={'kind':'uniform', 'low':-250, 'high':250})],
         38406: ['scenario_3840_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=3840, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
+        78201: ['scenario_7820_1.yaml', # 7820 targets, defaults: uniform law for pos and heading, normal law for speed
+              lambda: make_random_scenario(ntarg=7820, tp={'kind':'uniform', 'low':-250, 'high':250})],
+        156401: ['scenario_15640_1.yaml', # 15640 targets, defaults: uniform law for pos and heading, normal law for speed
+              lambda: make_random_scenario(ntarg=15640, tp={'kind':'uniform', 'low':-250, 'high':250})],
     }
 
 
