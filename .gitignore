@@ -136,6 +136,6 @@ docs/vendor
 docs/.sass-cache
 docs/_site
 *~
-
-
-
+# C++ byproducts
+src/native/pm.o
+src/native/pm_cpp_ext.cpp

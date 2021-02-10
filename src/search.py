@@ -28,6 +28,7 @@ def main(filename, method='sa', max_epoch=10000, sol_name=None, save_filename=No
         _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=max_epoch, display=2, T0=T0, use_native=False)
     elif method == 'sa2':  # simulated annealing native
         _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=max_epoch, display=2, T0=T0, use_native=True)
+    else: print('unknown search method')
     _end = time.perf_counter()
     cpu_dur = _end-_start; eval_per_sec = _neval/cpu_dur
     print(f'{sol_name}: {_drone.flight_duration():.2f}s (computed in {datetime.timedelta(seconds=cpu_dur)} h:m:s, {eval_per_sec:.0f} ev/s)')
@@ -35,7 +36,7 @@ def main(filename, method='sa', max_epoch=10000, sol_name=None, save_filename=No
     # check
     _drone2, _dur2 = pm.intercept_sequence_copy(scen.drone, _seq)
     if _dur2 != _drone2.flight_duration() or\
-        not np.allclose([_dur2], [_drone.flight_duration()]):  # python and C did not recompute same sequence 
+        not np.allclose([_dur2], [_drone.flight_duration()]):  # python and C did not recompute same duration for sequence 
         print('#### search.py: check failed FIXME ####')
         print(f'{_dur2} {_drone.flight_duration()}')
         pdb.set_trace()
@@ -47,7 +48,6 @@ def main(filename, method='sa', max_epoch=10000, sol_name=None, save_filename=No
         scen.save(filename)
     if show:
         pmu.plot_solutions(scen, [sol_name], filename)
-        plt.show()
         
 if __name__ == '__main__':
      parser = argparse.ArgumentParser(description='Runs search on a scenario.')
@@ -61,3 +61,4 @@ if __name__ == '__main__':
      parser.add_argument('-w', '--overwrite', help='save solution in original file', action="store_true")
      args = parser.parse_args()
      main(args.filename, args.method, args.epoch, args.sol_name, args.save_filename, args.overwrite, args.show, args.T0)
+     plt.show()

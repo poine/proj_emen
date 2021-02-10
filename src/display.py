@@ -9,22 +9,18 @@ import pdb
 
 import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma
 
-def main(filenames, sol_names,  anim=False, tf=1., save_anim=False, save_filename=None):
+def main(scen_filenames, sol_names,  anim=False, tf=1., save_anim=False, save_filename=None):
     #pdb.set_trace()
-    if len(filenames) > 1:
-        scens = [pmu.Scenario(filename=_f) for _f in filenames]
-        sol_names = sol_names.split(',')
-        anim = pma.animate_scenarios(scens, sol_names, tf)
-
+    scens = [pmu.Scenario(filename=_f) for _f in scen_filenames]
+    if len(scens) > 1:
+        anim = pma.animate_scenarios(scens, sol_names.split(','), tf)
     else:
-        filename = filenames[0]
-        scen = pmu.Scenario(filename=filename)
+        filename, scen = scen_filenames[0], scens[0]
         if scen.nb_solutions() == 0 or sol_names is None:
             pmu.plot_scenario(scen, filename)
         else:
-            sol_names = sol_names.split(',')
             if anim:
-                anim = pma.animate_solutions(scen, sol_names, tf, scen.name)
+                anim = pma.animate_solutions(scen, sol_names.split(','), tf, scen.name)
             else :
                 pmu.plot_solutions(scen, sol_names, filename)
     plt.show()

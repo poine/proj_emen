@@ -7,7 +7,11 @@ Some glue for the cython c++ interface
 try:
     import pm_cpp_ext
 except ImportError:
-    print('proj_manen.native_core: failed to import native library')
+    print('')
+    print('## WARNING: proj_manen.native_core: failed to import native library.')
+    print('    you will not be able to use the C++ backend which is needed for increased performances.')
+    print('    See the documentation for how to build and use it.')
+    print('')
 
 
 def search_exhaustive(drone, targets):

@@ -15,6 +15,7 @@ def _print_sol(_e, _t, _bd, _cd, _s):
     else:
         print(f'{_e: 8d}  {_t: 8.2f}  {_bd: 8.2f}  {_cd: 8.2f}')
 
+# mutation operator
 def _mutate(_seq):  # swaping two random stages
     _seq2 = _seq.copy()
     i1 = np.random.randint(0, high=len(_seq))
@@ -30,10 +31,12 @@ def _mutate2(_seq):  # swaping two adjacent stages
     _foo = _seq2.pop(i1); _seq2.insert(i2, _foo)
     return _seq2
 
+# functions for Temperature
 def _aff(a0, a1, n, i): return a0 + (a1-a0)*i/n
+def _step(a0, a1, n, i): return a0 if i<=n else a1
+def _2aff(a0, a1, n1, a2, a3, n2, i): return a0 + (a1-a0)*i/n1 if i <= n1 else a2 + (a3-a2)*(i-n1)/(n2-n1)
 def _exp(e0, n, i): return e0*np.exp(-i/n)
 def _f1(a0, i0, a1, i1, i): return a0 if i<=i0 else a0+(a1-a0)*(i-i0)/(i1-i0) if i <= i1 else a1
-
 
 try:
     import pm_cpp_ext
@@ -42,10 +45,7 @@ except ImportError:
 
 
 def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=False, Tf=None, display=0, T0=2., use_native=False):
-    if use_native:
-        solver = pm_cpp_ext.Solver(drone, targets)
-    else:
-        solver = pm
+    solver = pm_cpp_ext.Solver(drone, targets) if use_native else pm
     if display>0:
         print(f'running simulated annealing with {len(targets)} targets for {ntest:.1e} epochs')
         print(f'  ({ntest/np.math.factorial(len(targets)):.2e} search space coverage)')
