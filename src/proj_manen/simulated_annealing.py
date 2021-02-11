@@ -44,23 +44,22 @@ except ImportError:
     print('proj_manen.simulated_annealing: failed to import native code')
 
 
-def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=False, Tf=None, display=0, T0=2., use_native=False):
+def search(drone, targets, start_seq=None, epochs=1000, debug=False, Tf=None, display=0, T0=1., use_native=False):
     solver = pm_cpp_ext.Solver(drone, targets) if use_native else pm
     if display>0:
-        print(f'running simulated annealing with {len(targets)} targets for {ntest:.1e} epochs')
-        print(f'  ({ntest/np.math.factorial(len(targets)):.2e} search space coverage)')
+        print(f'running simulated annealing with {len(targets)} targets for {epochs:.1e} epochs')
+        print(f'  ({epochs/np.math.factorial(len(targets)):.2e} search space coverage)')
         if Tf is not None: print('   custom temperature control')
         else: print(f'  default linear temperature (T0={T0})')
-    start_seq = np.random.permutation(targets).tolist()
+    if start_seq is None: start_seq = np.random.permutation(targets).tolist()
     start_drone, start_dur = pm.intercept_sequence_copy(drone, start_seq)
-    
     best_drone, cur_drone = start_drone, start_drone
     best_seq = cur_seq = start_seq
     best_dur = cur_dur = start_dur
     if display>1: last_display = time.perf_counter()
-    if Tf is None: Tf = lambda i: _f1(T0, ntest/10, 1e-2, 8*ntest/10, i)
-    if debug: all_durs, kept_durs, Paccept = np.zeros(ntest) , np.zeros(ntest), np.zeros(ntest) 
-    for i in range(ntest):
+    if Tf is None: Tf = lambda i: _f1(T0, 0, 1e-2, 0.8*epochs, i)
+    if debug: all_durs, kept_durs, Paccept = np.zeros(epochs) , np.zeros(epochs), np.zeros(epochs) 
+    for i in range(epochs):
         _s2 = _mutate(cur_seq)
         _d2, _dur = solver.intercept_sequence_copy(drone, _s2)
         if debug: all_durs[i] = _dur
@@ -77,11 +76,8 @@ def search(drone, targets, start_dur=None, start_seq=None, ntest=1000, debug=Fal
                 last_display = time.perf_counter()
         if debug: kept_durs[i] = cur_dur
 
-    #__best_drone, __best_dur =  pm.intercept_sequence_copy(drone, best_seq)
-    #__best_drone2, __best_dur2 =  s.intercept_sequence_copy(drone, best_seq)
     if display>0:
         print(f'  best solution')
-        #pdb.set_trace()
         _print_sol(i, T, best_dur, cur_dur, cur_seq)
     if debug: return best_drone, best_seq, all_durs, kept_durs, Paccept
     else: return best_drone, best_seq

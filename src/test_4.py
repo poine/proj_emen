@@ -10,39 +10,6 @@ import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma, 
 import proj_manen.native_core as pm_nc
 
 
-def search_heuristic_closest_refined(scen, ntest, debug=False, Tf=None, start_seq_name='heuristic'):
-    try: # compute closest_target heuristic if unknown
-        name, heur_dur, heur_seq = scen.solution_by_name(start_seq_name)
-    except KeyError:    
-        heur_drone, heur_seq = pmu.search_heuristic_closest(scen.drone, scen.targets)
-        heur_dur = heur_drone.flight_duration()
-    print(f'Starting point (heuristic closest target {heur_dur})')
-    pm_sa._print_sol(0, heur_dur, heur_dur, heur_seq)
-    print(f'Local search ({ntest} iterations)')
-    if debug:
-        #best_drone, best_seq, all_durs, kept_durs, Paccept = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest, debug, Tf)
-        best_drone, best_seq, all_durs, kept_durs, Paccept = pm_sa.search(scen.drone, scen.targets, start_dur=None, start_seq=None, ntest=ntest, debug=True, Tf=Tf, display=True)
-        return best_drone, best_seq, all_durs, kept_durs, Paccept
-    else:
-        #best_drone, best_seq = search_locally(scen.drone, scen.targets, heur_dur, heur_seq, ntest)
-        best_drone, best_seq = pm_sa.search(scen.drone, scen.targets, start_dur=None, start_seq=None, ntest=ntest, debug=False, Tf=Tf, display=False)
-        return best_drone, best_seq
-
-
-#
-# 
-#
-def test1(filename = 'scenario_30_1.yaml', epochs=int(1e4)):
-    scen = pmu.Scenario(filename=filename)
-    try:
-        scen.solution_by_name('hc')
-    except KeyError:
-        test_drone, test_seq = pmu.search_heuristic_closest(scen.drone, scen.targets)
-        scen.add_solution('hc', test_drone.flight_duration(), test_seq)
-    
-    best_drone, best_seq = search_heuristic_closest_refined(scen, ntest=epochs)
-    scen.add_solution('heuristic_refined', best_drone.flight_duration(), best_seq)
-    scen.save(f'/tmp/{filename}')
 
 
 def mmmm(_v): return np.min(_v), np.max(_v), np.mean(_v), np.median(_v)
@@ -59,9 +26,10 @@ def plot_search_chronograms(filename, epoch, nrun, force=False):
     # lin vs quasi lin
     #Ts = [lambda i: pm_sa._aff(2, 1e-2, epoch, i), lambda i: pm_sa._f1(2, epoch/10, 1e-2, 9*epoch/10, i), lambda i: pm_sa._f1(2, 0, 1e-2, 9*epoch/10, i)]
     #Ts = [lambda i: pm_sa._aff(2, 0.01, epoch, i), lambda i: pm_sa._f1(2, epoch/10, 1e-2, 9*epoch/10, i)]
-    Ts = [lambda i: pm_sa._aff(1, 1e-2, epoch, i), lambda i: pm_sa._f1(1, 0, 1e-2, 9*epoch/10, i), lambda i: pm_sa._f1(1, 0, 1e-2, 8*epoch/10, i)]
+    ##Ts = [lambda i: pm_sa._aff(1, 1e-2, epoch, i), lambda i: pm_sa._f1(1, 0, 1e-2, 0.9*epoch, i), lambda i: pm_sa._f1(1, 0, 1e-2, 0.8*epoch, i)]
     # set of lin
-    #Ts = [lambda i: pm_sa._aff(T0, 1e-2, epoch, i) for T0 in [5, 2, 1,]]
+    #Ts = [(lambda i: pm_sa._f1(T0, 0., 1e-2, 0.8*epoch, i)) for T0 in [5, 2, 1,]]
+    Ts = [lambda i: pm_sa._f1(1, 0., 1e-2, 0.8*epoch, i), lambda i: pm_sa._f1(2, 0., 1e-2, 0.8*epoch, i)]
     #Ts = [lambda i: pm_sa._aff(5, 1e-2, epoch, i), lambda i: pm_sa._aff(2, 1e-2, epoch, i), lambda i: pm_sa._aff(1, 1e-2, epoch, i)]
     # step
     #Ts = [lambda i: pm_sa._aff(1, 1e-2, epoch, i), lambda i: pm_sa._step(1, 1e-2, epoch/2, i)]
@@ -78,7 +46,7 @@ def plot_search_chronograms(filename, epoch, nrun, force=False):
         print(f'running optimizations and storing to {cache_filename}')
         res = []
         for _i, Tf in enumerate(Ts):
-            res.append([pm_sa.search(scen.drone, scen.targets, ntest=epoch, debug=True, Tf=Tf, display=0, use_native=True) for _nr in range(nrun)])
+            res.append([pm_sa.search(scen.drone, scen.targets, epochs=epoch, debug=True, Tf=Tf, display=0, use_native=True) for _nr in range(nrun)])
             _print_summary(_i, [_r[0].flight_duration() for _r in res[-1]])
         np.savez(cache_filename, res=res)#, allow_pickle=True)
     else:
@@ -93,11 +61,12 @@ def plot_search_chronograms(filename, epoch, nrun, force=False):
     fig.canvas.set_window_title(filename)
     gs = fig.add_gridspec(3, 3)
     ax1 = fig.add_subplot(gs[0, :-1])
-    ax2 = fig.add_subplot(gs[1, :-1])
-    ax3 = fig.add_subplot(gs[2, :-1])
-    #ax1, ax2, ax3 = fig.subplots(3,1, sharex=True)
-    axes_chrono = [fig.add_subplot(gs[_i,-1]) for _i in range(len(Ts))]
-
+    ax2 = fig.add_subplot(gs[1, :-1], sharex=ax1)
+    ax3 = fig.add_subplot(gs[2, :-1], sharex=ax1)
+    axes_chrono = [fig.add_subplot(gs[0,-1])]
+    for _i in range(1, len(Ts)):
+        axes_chrono.append(fig.add_subplot(gs[0,-1], sharex=axes_chrono[0], sharey=axes_chrono[0]))
+        
     colors_by_cases = []
     _start = 0#int(9./10*epoch)
 
@@ -116,7 +85,7 @@ def plot_search_chronograms(filename, epoch, nrun, force=False):
     pmu.decorate(ax1, 'Cost', ylab='s', legend=True, ylim=ylim)
     pmu.decorate(ax2, 'Paccept')#, legend=True)
     pmu.decorate(ax3, 'Temperature', xlab='episode', ylab='s', legend=True)
-    plt.figure()
+    #plt.figure()
     #fig = plt.gcf(); fig.canvas.set_window_title(filename)
     #axes = fig.subplots(len(Ts),1, sharex=True, sharey=True, squeeze=False)
     for _i, (_c, _ax, _co) in enumerate(zip(costs_by_runs, axes_chrono, colors_by_cases)):
@@ -127,7 +96,7 @@ def plot_search_chronograms(filename, epoch, nrun, force=False):
 # TODO
 # *sample solutions in scenario  -> 
 # *fix chronogram
-# *sa with start hc
+# *sa with start hc 
 
 import sample_random_population as srp
 
@@ -136,8 +105,8 @@ def main(id_scen=13):
     
     #plot_search_chronograms(filename = pmu.ressource('data/scenario_30_1.yaml'), epoch=int(2e4), nrun=50, force=False)
     #plot_search_chronograms(filename = pmu.ressource('data/scenario_30_2.yaml'), epoch=int(3e4), nrun=50, force=False)
-    plot_search_chronograms(filename = pmu.ressource('data/scen_30/4.yaml'), epoch=int(2e4), nrun=50, force=False)
-    #plot_search_chronograms(filename = pmu.ressource('data/scen_60/9_1.yaml'), epoch=int(5e4), nrun=25, force=False)
+    #plot_search_chronograms(filename = pmu.ressource('data/scen_30/4.yaml'), epoch=int(2e4), nrun=50, force=False)
+    plot_search_chronograms(filename = pmu.ressource('data/scen_60/9_1.yaml'), epoch=int(4e4), nrun=25, force=False)
     #sample_solutions(['../data/scenario_30_1.yaml'], nb_samples=int(1e5))
     #sample_solutions(['../data/scenario_30_2.yaml'], nb_samples=int(1e5))
     #sample_solutions(['../data/scenario_30_4.yaml', '../data/scenario_30_6.yaml', '../data/scenario_30_9.yaml'], nb_samples=int(1e5))

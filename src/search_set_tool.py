@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 '''
-  Manipulate a search set
+  Runs a number of searches on a given scenario, cache and display results
 '''
 
 import argparse, os, time, datetime, numpy as np, matplotlib.pyplot as plt
@@ -28,8 +28,8 @@ def create_search_set(scen_filename, nb_searches, epochs, cache_filename, T0=2.)
         print(f'-{_ep:e} epochs')
         _drones, _seqs, _costs = [],[],[]
         for i in range(nb_searches):
-            #_drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=0)
-            _drone, _seq = pm_sa.search(scen.drone, scen.targets, ntest=_ep, display=0, T0=T0, use_native=True)
+            #_drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=_ep, display=0)
+            _drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=_ep, display=0, T0=T0, use_native=True)
             _drones.append(_drone); _seqs.append(_seq)
             _costs.append(_drone.flight_duration())
             _display_run(_ep, i, nb_searches, _costs)
@@ -40,10 +40,10 @@ def create_search_set(scen_filename, nb_searches, epochs, cache_filename, T0=2.)
     print(f'computed search set in {datetime.timedelta(seconds=time_tags[-1]-time_tags[0])}')
     print(f'saving to {cache_filename}')
     np.savez(cache_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
-    return cost_by_ep, seq_by_ep, epochs
+    return np.asarray(cost_by_ep), np.as_array(seq_by_ep), np.asarray(epochs)
         
 def load_search_set(cache_filename):
-    data = np.load(cache_filename+'.npz')
+    data = np.load(cache_filename)
     cost_by_ep, seq_by_ep, epochs = data['cost_by_ep'], data['seq_by_ep'], data['epochs'] 
     return cost_by_ep, seq_by_ep, epochs
 
@@ -77,16 +77,6 @@ def analyze_search_set(cost_by_ep, seq_by_ep, epochs, ds_filename, add_best=Fals
     if overwrite:
         scen.save(scen_filename)
 
-
-# def update_search_set(cache_filename1, cache_filename2, out_filename=None):
-#     _cbe1, _sbe1, _e1 = create_or_load_search_set(None, None, None, cache_filename1, False)
-#     _cbe2, _sbe2, _e2 = create_or_load_search_set(None, None, None, cache_filename2, False)
-#     epochs = np.append(_e1, _e2)
-#     cost_by_ep = np.append(_cbe1, _cbe2, axis=0)
-#     seq_by_ep = np.append(_sbe1, _sbe2, axis=0)
-#     if out_filename is not None:
-#         np.savez(out_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
-#     return cost_by_ep, seq_by_ep, epochs
 
 def merge_search_set(d1, d2):
     (_cbe1, _sbe1, _e1), (_cbe2, _sbe2, _e2) = d1, d2
