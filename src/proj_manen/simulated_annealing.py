@@ -58,27 +58,29 @@ def search(drone, targets, start_seq=None, epochs=1000, debug=False, Tf=None, di
     best_dur = cur_dur = start_dur
     if display>1: last_display = time.perf_counter()
     if Tf is None: Tf = lambda i: _f1(T0, 0, 1e-2, 0.8*epochs, i)
-    if debug: all_durs, kept_durs, Paccept = np.zeros(epochs) , np.zeros(epochs), np.zeros(epochs) 
+    if debug: all_durs, cur_durs, Paccept, max_dur = (np.zeros(epochs) for i in range(4))
     for i in range(epochs):
+        T = Tf(i)
+        _r = np.random.uniform(low=0, high=1.)
+        max_dur = cur_dur + T*np.log(_r)
         _s2 = _mutate(cur_seq)
-        _d2, _dur = solver.intercept_sequence_copy(drone, _s2)
-        if debug: all_durs[i] = _dur
+        _d2, _dur = solver.intercept_sequence_copy_threshold(drone, _s2, max_dur)
+        #_d2, _dur = solver.intercept_sequence_copy(drone, _s2)
+        acc_prob = np.exp(-(_dur-cur_dur)/T) if _dur > cur_dur else 0. # warning 1, but 0 looks nicer on plot
+        if debug:
+            all_durs[i] = _dur; Paccept[i] = acc_prob
         if _dur < best_dur:
             best_dur, best_drone, best_seq = _dur, _d2, _s2
-        T = Tf(i)
-        acc_prob = np.exp(-(_dur-cur_dur)/T) if _dur > cur_dur else 0. # warning 1, but 0 looks nicer on plot
-        if debug: Paccept[i] = acc_prob
-        _r = np.random.uniform(low=0, high=1.)
         if _dur < cur_dur or _r <= acc_prob:
             cur_dur, cur_drone, cur_seq = _dur, _d2, _s2
             if display>1 and time.perf_counter()-last_display> 1.:
                 _print_sol(i, T, best_dur, cur_dur, cur_seq)
                 last_display = time.perf_counter()
-        if debug: kept_durs[i] = cur_dur
+        if debug: cur_durs[i] = cur_dur
 
     if display>0:
         print(f'  best solution')
         _print_sol(i, T, best_dur, cur_dur, cur_seq)
-    if debug: return best_drone, best_seq, all_durs, kept_durs, Paccept
+    if debug: return best_drone, best_seq, all_durs, cur_durs, Paccept
     else: return best_drone, best_seq
 

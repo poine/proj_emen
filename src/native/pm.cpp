@@ -128,6 +128,19 @@ PmType Solver::run_sequence(std::vector<int> seq) {
 }
 
 
+PmType Solver::run_sequence_threshold(std::vector<int> seq, PmType max_t) {
+  _drone.reset(_drone.get_xs().front(), _drone.get_ys().front(), _drone._v);
+  for (int tid:seq) {
+    float psi; PmType dt;
+    solve_1(&psi, &dt, _targets[tid]);
+    _drone.add_leg(psi, dt);
+    if (_drone.flight_duration() >= max_t) break;
+  }
+  return _drone.flight_duration();
+}
+
+
+
 PmType Solver::run_exhaustive(std::vector<int> &best_seq) {
   std::vector<int> seq;
   for (unsigned int i=0; i<_targets.size(); i++)

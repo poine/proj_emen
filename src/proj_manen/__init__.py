@@ -95,21 +95,35 @@ def intercept_sequence_copy(drone, targets):
     drone = copy.deepcopy(drone)
     return drone, intercept_sequence(drone, targets)
 
-class TimeExceededException(Exception):
-    pass
-def intercept_sequence_if_shorter(drone, targets, max_t):
-    for target in targets:
-        psi, dt = intercept_1(drone, target)
-        drone.add_leg(dt, psi)
-        if drone.flight_duration() >= max_t: raise TimeExceededException
-    return drone.ts[-1]
+# first version: read below
+# class TimeExceededException(Exception):
+#     pass
+# def intercept_sequence_if_shorter(drone, targets, max_t):
+#     for target in targets:
+#         psi, dt = intercept_1(drone, target)
+#         drone.add_leg(dt, psi)
+#         if drone.flight_duration() >= max_t: raise TimeExceededException
+#     return drone.ts[-1]
+#
+# def intercept_sequence_if_shorter2(drone, targets, max_t):
+#     for target in targets:
+#         psi, dt = intercept_1(drone, target)
+#         drone.add_leg(dt, psi)
+#         if drone.flight_duration() >= max_t: return None
+#     return drone.ts[-1]
 
-def intercept_sequence_if_shorter2(drone, targets, max_t):
+
+# Intercept a sequence up to a given time
+# hope this has two nice effects: speeds up computations (maybe) and make us more resilient to overflows in time and positions
+def intercept_sequence_copy_threshold(drone, targets, max_t):
+    drone = copy.deepcopy(drone)
     for target in targets:
         psi, dt = intercept_1(drone, target)
         drone.add_leg(dt, psi)
-        if drone.flight_duration() >= max_t: return None
-    return drone.ts[-1]
+        if drone.flight_duration() >= max_t: break
+    return drone, drone.ts[-1]
+
+
 
 
 
