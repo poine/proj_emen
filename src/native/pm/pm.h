@@ -52,6 +52,7 @@ class Solver {
   //~Solver();
   bool init(PmType* dp, float dv, std::vector<PmType> tx, std::vector<PmType> ty, std::vector<float> tv, std::vector<float> th);
   PmType run_sequence(std::vector<int> seq);
+  PmType run_sequence_threshold(std::vector<int> seq, PmType max_t);
   PmType run_exhaustive(std::vector<int> &best_seq);
   PmType run_random(std::vector<int> &seq);
   void solve_1(float* psi, PmType* dt, Target target);

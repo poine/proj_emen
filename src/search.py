@@ -54,8 +54,8 @@ def main(filename, method='sa2', max_epoch=10000, sol_name=None, save_filename=N
 if __name__ == '__main__':
      parser = argparse.ArgumentParser(description='Runs search on a scenario.')
      parser.add_argument("filename")
-     parser.add_argument('-m', '--method', default='sa', help='search method: ex(haustive), he(uristic_closest), ex2, sa')
-     parser.add_argument('-e', '--epoch', type=int, default=1000, help='number of epoch for sa')
+     parser.add_argument('-m', '--method', default='sa2', help='search method: ex(haustive), he(uristic_closest), ex2, sa')
+     parser.add_argument('-e', '--epoch', help='number of epoch for sa', default='1k')#, type=int, default=1000,
      parser.add_argument('-f', '--T0', type=float, default=1., help='start temperature for sa')
      parser.add_argument('-g', '--s0', type=str, help='name of start solution for sa')
      parser.add_argument('-s', '--save_filename', help='save scenario to file')
@@ -63,6 +63,6 @@ if __name__ == '__main__':
      parser.add_argument('-x', '--show', help='display solution', action="store_true")
      parser.add_argument('-w', '--overwrite', help='save solution in original file', action="store_true")
      args = parser.parse_args()
-     epoch = pmu.parse_with_prefix(args.epochs)# example: 5e3,1e4,1m
-     main(args.filename, args.method, args.epoch, args.sol_name, args.save_filename, args.overwrite, args.show, args.T0, args.s0)
+     epoch = pmu.parse_with_prefix(args.epoch)# example: 5e3,1e4,1m
+     main(args.filename, args.method, epoch, args.sol_name, args.save_filename, args.overwrite, args.show, args.T0, args.s0)
      plt.show()

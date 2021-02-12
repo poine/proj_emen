@@ -20,6 +20,7 @@ cdef extern from "pm/pm.h":
         c_Solver()
         bool init(PmType* dp, float dv, vector[PmType] tx, vector[PmType] ty, vector[float] tv, vector[float] th)
         PmType run_sequence(vector[int] seq)
+        PmType run_sequence_threshold(vector[int] seq, PmType max_t)
         PmType run_exhaustive(vector[int] &best_seq)
         PmType run_random(vector[int] &best_seq)
         vector[float] get_psis()
@@ -55,6 +56,11 @@ cdef class Solver:
         for _s in seq: _seq.push_back(_s)
         return self.thisptr.run_sequence(_seq)
 
+    def run_sequence_threshold(self, seq, max_t):
+        cdef vector[int] _seq
+        for _s in seq: _seq.push_back(_s)
+        return self.thisptr.run_sequence_threshold(_seq, max_t)
+
     def run_exhaustive(self):
         cdef vector[int] _best_seq
         best_dur = self.thisptr.run_exhaustive(_best_seq)
@@ -74,6 +80,12 @@ cdef class Solver:
     def intercept_sequence_copy(self, drone, seq):
         drone = copy.deepcopy(drone)
         dt = self.run_sequence([_s.name-1 for _s in seq])
+        drone.ts.append(dt)
+        return drone, dt
+
+    def intercept_sequence_copy_threshold(self, drone, seq, max_t):
+        drone = copy.deepcopy(drone)
+        dt = self.run_sequence_threshold([_s.name-1 for _s in seq], max_t)
         drone.ts.append(dt)
         return drone, dt
 
