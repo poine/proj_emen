@@ -40,7 +40,7 @@ def create_search_set(scen_filename, nb_searches, epochs, cache_filename, T0=2.)
     print(f'computed search set in {datetime.timedelta(seconds=time_tags[-1]-time_tags[0])}')
     print(f'saving to {cache_filename}')
     np.savez(cache_filename, cost_by_ep=cost_by_ep, seq_by_ep=seq_by_ep, epochs=epochs)
-    return np.asarray(cost_by_ep), np.as_array(seq_by_ep), np.asarray(epochs)
+    return np.asarray(cost_by_ep), np.asarray(seq_by_ep), np.asarray(epochs)
         
 def load_search_set(cache_filename):
     data = np.load(cache_filename)

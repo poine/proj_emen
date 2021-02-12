@@ -140,7 +140,7 @@ def make_random_scenario(ntarg, dp0=(10,0), dv=15,
 def load_scenario(filename):
     print(f'loading scenario from file: {filename}')
     with open(filename) as f:
-        _dict = yaml.load(f)
+        _dict = yaml.load(f, Loader=yaml.SafeLoader)
     targets, solutions = [], []
     for _k, _args in _dict.items():
         if _k == 'targets':
@@ -435,7 +435,7 @@ class ScenarioFactory:
 
         609:  ['scenario_60_9.yaml', # grid 2
                lambda: make_random_scenario(ntarg=60, dp0=(-10,-10), tp={'kind':'grid', 'nr':8, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
-        609_1:  ['scenario_60_9_1.yaml', # grid 2 with noise
+        6091:  ['scenario_60_9_1.yaml', # grid 2 with noise
                lambda: make_random_scenario(ntarg=60, dp0=(-10,-10), tp={'kind':'grid', 'nr':8, 'd':15}, th=_normal(np.deg2rad(20.), np.deg2rad(10.)), tv=_normal(5., 0.5))],
 
         
