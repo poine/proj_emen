@@ -10,7 +10,6 @@
 //
 Drone::Drone() {}
 
-PmType Drone::flight_duration() { return _ts.back(); }
 
 void Drone::reset(PmType x0, PmType y0, float v) {
   _v = v;
@@ -23,6 +22,7 @@ void Drone::get_last_leg_start_pos(PmType* x, PmType* y) {
 }
 
 //PmType Drone::get_last_leg_start_time() { return _ts.back(); }
+PmType Drone::flight_duration() { return _ts.back(); }
 
 void Drone::add_leg(float psi, PmType dt) {
   _ts.push_back(_ts.back()+dt);
@@ -51,17 +51,10 @@ void Target::get_pos(PmType t, PmType* x, PmType* y) {
 //
 // Solver
 //
-Solver::Solver() {
-  //std::printf("Solver::Solver()\n");
-}
+Solver::Solver() {}
 
 bool Solver::init(PmType* dp, float dv, std::vector<PmType> tx, std::vector<PmType> ty, std::vector<float> tv, std::vector<float> th) {
-  //std::printf("initialized\n");
-  //std::printf("  drone (%f %f) %f\n", dp[0], dp[1], dv);
   _drone.reset(dp[0], dp[1], dv);
-  // for (float v:tv) {
-  //   std::printf("  v %f\n", v);
-  // }
   for (unsigned int i=0; i<tv.size(); i++) {
     Target t = Target(i, tx[i], ty[i], tv[i], th[i]);
     _targets.push_back(t);
@@ -151,4 +144,12 @@ PmType Solver::run_exhaustive(std::vector<int> &best_seq) {
   for (int _s:_best_seq)
     best_seq.push_back(_s);
   return best_cost;
+}
+
+
+PmType Solver::run_random(std::vector<int> &seq) {
+  for (unsigned int i=0; i<_targets.size(); i++)
+    seq.push_back(i);
+  std::random_shuffle( seq.begin(), seq.end() );
+  return run_sequence(seq);
 }

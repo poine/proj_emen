@@ -20,7 +20,8 @@ cdef extern from "pm/pm.h":
         c_Solver()
         bool init(PmType* dp, float dv, vector[PmType] tx, vector[PmType] ty, vector[float] tv, vector[float] th)
         PmType run_sequence(vector[int] seq)
-        float run_exhaustive(vector[int] &best_seq)
+        PmType run_exhaustive(vector[int] &best_seq)
+        PmType run_random(vector[int] &best_seq)
         vector[float] get_psis()
 
 cdef class Solver:
@@ -58,6 +59,11 @@ cdef class Solver:
         cdef vector[int] _best_seq
         best_dur = self.thisptr.run_exhaustive(_best_seq)
         return best_dur, [_s for _s in _best_seq]
+
+    def run_random(self):
+        cdef vector[int] _seq
+        _dur = self.thisptr.run_random(_seq)
+        return _dur, [_s for _s in _seq]
         
     def debug(self):
         cdef vector[float] psis

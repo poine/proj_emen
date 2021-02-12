@@ -16,6 +16,16 @@ def proj_dir():
 
 def ressource(_r): return os.path.join(proj_dir(), _r)
 
+# Getting tired of typing so many zeros
+def parse_with_prefix(_s):
+    try:
+        res = int(float(_s))
+    except ValueError: #
+        if _s.endswith('k'): res = int(float(_s[:-1])*1e3)
+        elif _s.endswith('m'): res = int(float(_s[:-1])*1e6)
+        elif _s.endswith('g'): res = int(float(_s[:-1])*1e9)
+    return res
+
 #
 # Some plotting
 #
@@ -97,7 +107,6 @@ def make_random_scenario(ntarg, dp0=(10,0), dv=15,
                           tp={'kind':'uniform', 'low':-50, 'high':50},
                           th={'kind':'uniform', 'low':-np.pi, 'high':np.pi},
                           tv={'kind':'normal', 'mean':5., 'std':0.5}):
-    plim = 50.
     drone = pm.Drone(dp0, dv, 0)
 
     alphas = np.linspace(-np.pi, np.pi, ntarg, endpoint=False)
@@ -462,6 +471,9 @@ class ScenarioFactory:
               lambda: make_random_scenario(ntarg=240, tp={'kind':'uniform', 'low':-250, 'high':250})],
         2402: ['scenario_240_2.yaml', # circle toward
                lambda: make_random_scenario(ntarg=240, tp=_circle(200, (0,0)), th=_toward(np.deg2rad(45.), np.deg2rad(0.)),  tv=_normal(5., 0.))],
+        24022: ['scen_240/2_2.yaml', # circle toward skewed + line
+                lambda: merge((make_random_scenario(ntarg=160, tp=_circle(100, (0,0)), th=_toward(np.deg2rad(45.), np.deg2rad(0.)),  tv=_normal(5., 0.)),
+                               make_random_scenario(ntarg=80, tp=_line(100), th=_normal(np.deg2rad(0.), np.deg2rad(0.)),  tv=_normal(5., 0.))))],
         2403: ['scenario_240_3.yaml', # circle away
               lambda: make_random_scenario(ntarg=240, dp0=(10,0), tp=_circle(25), th=_away(), tv=_normal(5.,0))],
         2404: ['scenario_240_4.yaml', # line

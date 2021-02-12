@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import numpy as np, yaml, itertools, copy
+import numpy as np, copy
 import pdb
 
 def _to_eucl(n, h): return n*np.array([np.cos(h), np.sin(h)])

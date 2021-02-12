@@ -12,7 +12,10 @@ import proj_manen as pm, proj_manen.utils as pmu
 
 def main(idx, show=False):
     scen = pmu.ScenarioFactory.make(idx)
-    scen.save(f'/tmp/{pmu.ScenarioFactory.filename(idx)}')
+    filename = f'/tmp/{pmu.ScenarioFactory.filename(idx)}'
+    dirname=os.path.dirname(filename)
+    if not os.path.exists(dirname): os.makedirs(dirname)
+    scen.save(filename)
     if show:
         pmu.plot_scenario(scen)
         plt.show()

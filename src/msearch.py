@@ -89,7 +89,7 @@ def merge_search_set(d1, d2):
 
 def main(set_filenames, create, analyze, show, scen_filename, nb_searches, epochs, overwrite, add_best, add_good):
     if create:
-        print(f'## About to run {nb_searches} searches for {epochs} epochs on {scen_filename}')
+        print(f'## About to run {nb_searches:e} searches for {epochs} epochs on {scen_filename}')
         print(f'## results will be stored in {set_filenames[0]}')
         data = create_search_set(scen_filename, nb_searches, epochs, set_filenames[0])
     else:
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--overwrite', help='overwrite', action='store_true')
 
     args = parser.parse_args()
-    epochs = [int(float(_)) for _ in args.epochs.split(',')] if args.epochs is not None else [] # example: 5e3,1e4
+    epochs = [pmu.parse_with_prefix(_) for _ in args.epochs.split(',')] if args.epochs is not None else [] # example: 5e3,1e4 
     #pdb.set_trace()
     #epochs = [int(1e3), int(5e3)]#, int(1e4), int(2e4), int(5e4), int(1e5)]
     main(args.set_filename, args.create, args.analyze, args.show, args.scen_filename, args.nb_run, epochs, args.overwrite, args.add_best, args.add_good)

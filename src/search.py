@@ -63,5 +63,6 @@ if __name__ == '__main__':
      parser.add_argument('-x', '--show', help='display solution', action="store_true")
      parser.add_argument('-w', '--overwrite', help='save solution in original file', action="store_true")
      args = parser.parse_args()
+     epoch = pmu.parse_with_prefix(args.epochs)# example: 5e3,1e4,1m
      main(args.filename, args.method, args.epoch, args.sol_name, args.save_filename, args.overwrite, args.show, args.T0, args.s0)
      plt.show()
