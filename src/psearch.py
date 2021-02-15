@@ -45,11 +45,12 @@ def main(scen_filename, epochs, nruns, save=False):
     print(f'computed search set in {datetime.timedelta(seconds=_end-_start)}')
     res = [queue.get() for i in range(nruns)]
     _durs, _seqs = [_r[0] for _r in res], [_r[1] for _r in res]
-    with np.printoptions(precision=2, suppress=True):
-        print(f'{_durs}')
+    #with np.printoptions(precision=2, suppress=True):
+    #    print(f'{_durs}')
+    print(f'{pmu.fmt_mmmm(pmu.mmmm(_durs))}')
     best_idx = np.argmin(_durs)
     best_dur, best_seqn = _durs[best_idx], _seqs[best_idx]
-    print(f'best : {best_dur}')
+    print(f'best : {best_dur:.4f} s')
     if save:
         scen.add_solution('best', best_dur, best_seqn)
         scen.save(scen_filename) 
