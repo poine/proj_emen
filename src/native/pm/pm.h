@@ -4,7 +4,7 @@
 #include <vector>
 
 // change pm_cpp_ext.pyx accordingly
-typedef long double PmType; // at 15640
+typedef long double PmType; // fails at 15640
 //typedef double PmType; // fails at 480
 //typedef float PmType; // fails scen1 from 120 targets
 
@@ -51,6 +51,7 @@ class Solver {
   Solver();
   //~Solver();
   bool init(PmType* dp, float dv, std::vector<PmType> tx, std::vector<PmType> ty, std::vector<float> tv, std::vector<float> th);
+  PmType search_sa(std::vector<int> start_seq, unsigned int epochs, float T0);
   PmType run_sequence(std::vector<int> seq);
   PmType run_sequence_threshold(std::vector<int> seq, PmType max_t);
   PmType run_exhaustive(std::vector<int> &best_seq);

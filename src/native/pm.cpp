@@ -62,6 +62,12 @@ bool Solver::init(PmType* dp, float dv, std::vector<PmType> tx, std::vector<PmTy
   return true;
 }
 
+
+PmType Solver::search_sa(std::vector<int> start_seq, unsigned int epochs, float T0) {
+}
+
+
+
 void solve_quadratic(PmType a, PmType b, PmType c, PmType* l0, PmType*l1) {
   PmType delta = b*b-4*a*c;
   if (delta >= 0.) {

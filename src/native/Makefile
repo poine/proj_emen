@@ -2,7 +2,7 @@ all: pm_cpp_ext.cpython-36m-x86_64-linux-gnu.so #pm_cpp_ext.so
 
 
 pm.o: pm.cpp pm/pm.h
-	g++ -Wall -std=c++11 -fPIC pm.cpp -c
+	g++ -Wall -std=c++11 -fPIC -Ofast pm.cpp -c
 
 #pm.a: pm.o
 #	ar rvs pm.a pm.o

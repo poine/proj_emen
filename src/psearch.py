@@ -1,0 +1,66 @@
+#! /usr/bin/env python3
+#-*- coding: utf-8 -*-
+'''
+  Unit test for multiprocessing
+'''
+import argparse, os, time, numpy as np, matplotlib.pyplot as plt
+import multiprocessing as mp
+import pdb
+
+import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma, proj_manen.simulated_annealing as pm_sa
+import proj_manen.native_core as pm_nc
+
+
+def info(title):
+    print(title)
+    print('module name:', __name__)
+    print('parent process:', os.getppid())
+    print('process id:', os.getpid())
+
+#def run_sa(idx, scen, start_seq, epochs):#, queue):
+def run_sa(args):#, queue):
+    idx, scen, start_seq, epochs, queue = args
+    #info('run_sa')
+    #print(f'{idx} starting')# on: {scen.name} {epochs:.1e}')
+    res = pm_sa.search(scen.drone, scen.targets, start_seq, epochs=epochs, display=0, use_native=True)
+    print(f'{idx} done: {res[0].flight_duration():.3f} s')
+    #queue.task_done()
+    queue.put((res[0].flight_duration(), res[1]))
+
+def main(filename, epochs, nruns, save=False):
+    print("Number of cpu : ", mp.cpu_count())
+    #info('main line')
+    _start = time.perf_counter()
+    scen = pmu.Scenario(filename=filename)
+    start_seqs = [np.random.permutation(scen.targets).tolist() for _i in range(nruns)]
+    pool = mp.Pool(mp.cpu_count())
+    m = mp.Manager()
+    queue = m.Queue()
+    _d = [(_i, scen, _s, int(1e4), queue) for _i, _s in enumerate(start_seqs)]
+    pool.map(run_sa, _d)
+    pool.close()
+    pool.join()
+    _end = time.perf_counter()
+    print(f'search took {_end-_start:.1f} s')
+    res = [queue.get() for i in range(nruns)]
+    _durs, _seqs = [_r[0] for _r in res], [_r[1] for _r in res]
+    with np.printoptions(precision=2, suppress=True):
+        print(f'{_durs}')
+    best_idx = np.argmin(_durs)
+    best_dur, best_seqn = _durs[best_idx], _seqs[best_idx]
+    print(f'best : {best_dur}')
+    if save:
+        scen.add_solution('best', best_dur, best_seqn)
+        scen.save('/tmp/foo')#scen_filename) 
+ 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Run simulated annealing in parallel.')
+    parser.add_argument('scen_filename')
+    parser.add_argument('-e', '--epochs', help='epochs', default='1k')
+    parser.add_argument('-t', '--nb_run', help='nb runs', type=int, default=10)
+    parser.add_argument('-w', '--overwrite', help='overwrite', action='store_true')
+    #parser.add_argument('-s', '--scen_filename', help='scenario filename')
+    args = parser.parse_args()
+    epochs = pmu.parse_with_prefix(args.epochs)
+    main(args.scen_filename, epochs, args.nb_run, args.overwrite)
+    

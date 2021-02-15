@@ -105,7 +105,7 @@ def main(set_filenames, create, analyze, show, scen_filename, nb_searches, epoch
         plt.show()
         
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Manipulate s search set.')
+    parser = argparse.ArgumentParser(description='Manipulate a set of searches.')
     parser.add_argument('set_filename', nargs='*')
     parser.add_argument('-x', '--show', help='show', action='store_true')
     parser.add_argument('-c', '--create', help='create', action='store_true')
@@ -119,6 +119,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     epochs = [pmu.parse_with_prefix(_) for _ in args.epochs.split(',')] if args.epochs is not None else [] # example: 5e3,1e4 
-    #pdb.set_trace()
-    #epochs = [int(1e3), int(5e3)]#, int(1e4), int(2e4), int(5e4), int(1e5)]
     main(args.set_filename, args.create, args.analyze, args.show, args.scen_filename, args.nb_run, epochs, args.overwrite, args.add_best, args.add_good)

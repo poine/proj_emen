@@ -104,10 +104,12 @@ def test22(filename = '../../data/scenario_60_6.yaml'):
 #
 # Profiling: x200?
 #
-def test3(filename = '../../data/scen_60/9.yaml', ntest=1000):
+# 
+def test3(filename = '../../data/scen_7820/9.yaml', ntest=1000):
     scen = pmu.Scenario(filename=filename)
     s = pm_cpp_ext.Solver(scen.drone, scen.targets)
-    seq = [_s.name for _s in scen.targets]
+    seq = [_s.name-1 for _s in scen.targets]
+    #pdb.set_trace()
 
     _start1 = time.perf_counter()
     for i in range(ntest):
@@ -145,7 +147,7 @@ def test4(filename = '../../data/scenario_9_6.yaml'):
     
 #test1()
 #test11()  # hunting complex root bug: float overflow
-test2('../../data/scen_60/1.yaml')  # check random permutations
+#test2('../../data/scen_60/1.yaml')  # check random permutations
 #test22()
-#test3()   # profiling cost evaluation
+test3()   # profiling cost evaluation
 #test4()   # exhaustive search

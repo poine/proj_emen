@@ -12,7 +12,7 @@ import proj_manen as pm, proj_manen.utils as pmu, proj_manen.simulated_annealing
 import proj_manen.native_core as pm_nc
 
 
-def main(filename, method='sa2', max_epoch=10000, sol_name=None, save_filename=None, overwrite=False, show=False, T0=1., start_sol_name=None):
+def main(filename, method='sa2', max_epoch=10000, sol_name=None, save_filename=None, overwrite=False, show=False, T0=2., start_sol_name=None):
     scen = pmu.Scenario(filename=filename)
     _start = time.perf_counter()
     _neval = max_epoch
@@ -56,7 +56,7 @@ if __name__ == '__main__':
      parser.add_argument("filename")
      parser.add_argument('-m', '--method', default='sa2', help='search method: ex(haustive), he(uristic_closest), ex2, sa')
      parser.add_argument('-e', '--epoch', help='number of epoch for sa', default='1k')#, type=int, default=1000,
-     parser.add_argument('-f', '--T0', type=float, default=1., help='start temperature for sa')
+     parser.add_argument('-f', '--T0', type=float, default=2., help='start temperature for sa')
      parser.add_argument('-g', '--s0', type=str, help='name of start solution for sa')
      parser.add_argument('-s', '--save_filename', help='save scenario to file')
      parser.add_argument('-n', '--sol_name', help='name of solution')

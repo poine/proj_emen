@@ -509,10 +509,16 @@ class ScenarioFactory:
               lambda: make_random_scenario(ntarg=3840, tp={'kind':'uniform', 'low':-250, 'high':250})],
         38406: ['scenario_3840_6.yaml', # circle headings parallel
                lambda: make_random_scenario(ntarg=3840, tp=_circle(300), th=_normal(0., 0.), tv=_normal(5., 0.))],
+
         78201: ['scenario_7820_1.yaml', # 7820 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=7820, tp={'kind':'uniform', 'low':-250, 'high':250})],
+        78209: ['scen_7820/9.yaml', # grid 2
+                lambda: make_random_scenario(ntarg=7820, dp0=(-10,-10), tp={'kind':'grid', 'nr':89, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+
         156401: ['scenario_15640_1.yaml', # 15640 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=15640, tp={'kind':'uniform', 'low':-250, 'high':250})],
+        156409: ['scen_15640/9.yaml', # grid 2
+                lambda: make_random_scenario(ntarg=15640, dp0=(-10,-10), tp={'kind':'grid', 'nr':125, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
     }
 
 
