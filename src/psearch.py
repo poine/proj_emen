@@ -28,7 +28,8 @@ def run_sa(args):#, queue):
     queue.put((res[0].flight_duration(), res[1]))
 
 def main(filename, epochs, nruns, save=False):
-    print("Number of cpu : ", mp.cpu_count())
+    print(f'Running {nruns} runs of {epochs:.1e} epochs on {filename}')
+    print(f'Number of cpu: {mp.cpu_count()}')
     #info('main line')
     _start = time.perf_counter()
     scen = pmu.Scenario(filename=filename)
@@ -36,7 +37,7 @@ def main(filename, epochs, nruns, save=False):
     pool = mp.Pool(mp.cpu_count())
     m = mp.Manager()
     queue = m.Queue()
-    _d = [(_i, scen, _s, int(1e4), queue) for _i, _s in enumerate(start_seqs)]
+    _d = [(_i, scen, _s, epochs, queue) for _i, _s in enumerate(start_seqs)]
     pool.map(run_sa, _d)
     pool.close()
     pool.join()
