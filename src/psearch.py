@@ -27,22 +27,22 @@ def run_sa(args):#, queue):
     #queue.task_done()
     queue.put((res[0].flight_duration(), res[1]))
 
-def main(scen_filename, epochs, nruns, save=False):
+def main(scen_filename, epochs, nruns, parallel, save=False):
     print(f'Running {nruns} runs of {epochs:.1e} epochs on {scen_filename}')
     print(f'Number of cpu: {mp.cpu_count()}')
     #info('main line')
-    _start = time.perf_counter()
+    _start = time.time()
     scen = pmu.Scenario(filename=scen_filename)
     start_seqs = [np.random.permutation(scen.targets).tolist() for _i in range(nruns)]
-    pool = mp.Pool(mp.cpu_count())
+    pool = mp.Pool(parallel)
     m = mp.Manager()
     queue = m.Queue()
     _d = [(_i, scen, _s, epochs, queue) for _i, _s in enumerate(start_seqs)]
     pool.map(run_sa, _d)
     pool.close()
     pool.join()
-    _end = time.perf_counter()
-    print(f'computed search set in {datetime.timedelta(seconds=_end-_start)}')
+    _end = time.time()
+    print(f'computed search set in {datetime.timedelta(seconds=_end-_start)} (h::m::s)')
     res = [queue.get() for i in range(nruns)]
     _durs, _seqs = [_r[0] for _r in res], [_r[1] for _r in res]
     #with np.printoptions(precision=2, suppress=True):
@@ -59,10 +59,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run simulated annealing in parallel.')
     parser.add_argument('scen_filename')
     parser.add_argument('-e', '--epochs', help='epochs', default='1k')
-    parser.add_argument('-t', '--nb_run', help='nb runs', type=int, default=10)
+    parser.add_argument('-t', '--nb_run', help='nb runs', type=int, default=8)
+    parser.add_argument('-J', '--parallel', help='nb runs', type=int, default=mp.cpu_count())
     parser.add_argument('-w', '--overwrite', help='overwrite', action='store_true')
     #parser.add_argument('-s', '--scen_filename', help='scenario filename')
     args = parser.parse_args()
     epochs = pmu.parse_with_prefix(args.epochs)
-    main(args.scen_filename, epochs, args.nb_run, args.overwrite)
+    main(args.scen_filename, epochs, args.nb_run, args.parallel, args.overwrite)
     
