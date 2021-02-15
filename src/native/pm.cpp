@@ -102,7 +102,7 @@ bool _check(std::vector<int>& seq) {
 }
 
 PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float T0, std::vector<int> &best_seq, int display) {
-  int _report_every = 1000;
+  unsigned int _report_every = std::min(nepoch/20, (unsigned int)1000);
   //std::printf("  start ");_print_seq(start_seq);
   PmType best_dur = run_sequence(start_seq);
   std::vector<int> _best_seq = start_seq;
@@ -123,7 +123,8 @@ PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float 
     float acc_prob = exp(-(dur-cur_dur)/T); 
     float r = _dist2(_gen);
     if (display && i%_report_every == 0) {
-      std::printf(" %06d %.2f dur %.3Lf cur %.3Lf best %.3Lf  (%.3f %.3f)\n", i, T, dur, cur_dur, best_dur, acc_prob, r);
+      std::printf(" %06d %.2f cur %.3Lf best %.3Lf\n", i, T, cur_dur, best_dur);
+      //std::printf(" %06d %.2f dur %.3Lf cur %.3Lf best %.3Lf  (%.3f %.3f)\n", i, T, dur, cur_dur, best_dur, acc_prob, r);
       //std::printf(" %06d %.2f dur %.3Lf cur %.3Lf best %.3Lf ", i, T, dur, cur_dur, best_dur);
       //_print_seq(cur_seq);
     }

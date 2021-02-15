@@ -20,10 +20,10 @@ def ressource(_r): return os.path.join(proj_dir(), _r)
 def parse_with_prefix(_s):
     try:
         res = int(float(_s))
-    except ValueError: #
-        if _s.endswith('k'): res = int(float(_s[:-1])*1e3)
-        elif _s.endswith('m'): res = int(float(_s[:-1])*1e6)
-        elif _s.endswith('g'): res = int(float(_s[:-1])*1e9)
+    except ValueError:
+        if   _s.endswith('k') or _s.endswith('K'): res = int(float(_s[:-1])*1e3)
+        elif _s.endswith('m') or _s.endswith('M'): res = int(float(_s[:-1])*1e6)
+        elif _s.endswith('g') or _s.endswith('G'): res = int(float(_s[:-1])*1e9)
     return res
 
 # formating
