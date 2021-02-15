@@ -150,7 +150,7 @@ def test5(filename = '../../data/scen_small/scenario_9_6.yaml', nepoch=int(10)):
     start_seq = np.random.permutation(scen.targets).tolist()
     _start_seq = [_s.name-1 for _s in start_seq]
     _start = time.perf_counter()
-    best_dur, best_seq = s.search_sa(_start_seq, nepoch, T0=1.)
+    best_dur, best_seq = s.search_sa(_start_seq, nepoch, T0=1., display=2)
     _end = time.perf_counter()
     dt = _end-_start
     print(f'search took {dt:.0f}s best dur {best_dur:.3f}')

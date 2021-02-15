@@ -89,6 +89,35 @@ void mutate(std::vector<int> &seq, int i1, int i2) {
   //std::printf("after  "); _print_seq(seq);
 }
 
+// this is more like the python version
+void mutate2(std::vector<int> &seq, int i1, int i2, std::vector<int> &seq2) {
+  //std::printf("before "); _print_seq(seq);
+  //std::printf("swaping %d %d\n", i1, i2);
+  int tmp = seq[i1];
+  seq.erase (seq.begin()+i1);
+  seq.insert(seq.begin()+i2, tmp);
+  //std::printf("after  "); _print_seq(seq);
+}
+
+void mutate3(std::vector<int> &seq1, int i1, int i2, std::vector<int> &seq2) {
+  //std::printf("before "); _print_seq(seq);
+  //std::printf("swaping %d %d\n", i1, i2);
+  seq2[i1] = seq1[i2];
+  seq2[i2] = seq1[i1];
+  //std::printf("after  "); _print_seq(seq);
+}
+
+void mutate4(std::vector<int> &seq1, int i1, int i2, std::vector<int> &seq2) {
+  //std::printf("before "); _print_seq(seq);
+  //std::printf("swaping %d %d\n", i1, i2);
+  seq2.erase (seq2.begin()+i1);
+  seq2.insert(seq2.begin()+i2, seq1[i1]);
+  //std::printf("after  "); _print_seq(seq);
+}
+
+
+
+
 bool _check(std::vector<int>& seq) {
   int cnt[seq.size()];
   for (unsigned int i=0; i<seq.size(); i++) cnt[i]=0;
@@ -101,8 +130,11 @@ bool _check(std::vector<int>& seq) {
   return true;
 }
 
+
+
 PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float T0, std::vector<int> &best_seq, int display) {
-  unsigned int _report_every = std::min(nepoch/20, (unsigned int)1000);
+  if (display > 0) { std::printf("running simulated annealing with %ld targets for %d epochs\n", start_seq.size(), nepoch); }
+  unsigned int _report_every = 10000;//std::min(nepoch/10, (unsigned int)10000);
   //std::printf("  start ");_print_seq(start_seq);
   PmType best_dur = run_sequence(start_seq);
   std::vector<int> _best_seq = start_seq;
@@ -116,13 +148,14 @@ PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float 
   for (unsigned int i=0; i<nepoch; i++) {
     int i1 = _dist(_gen), i2 = _dist(_gen);
     while (i1==i2) {i2 = _dist(_gen);}
-    mutate(cur_seq, i1, i2);
+    std::vector<int> new_seq = std::vector<int>(cur_seq);
+    mutate4(cur_seq, i1, i2, new_seq);
     //_check(cur_seq);
-    PmType dur = run_sequence(cur_seq);
+    PmType dur = run_sequence(new_seq);
     float T = Tf(i, T0, 1e-2, int(0.9*nepoch));
     float acc_prob = exp(-(dur-cur_dur)/T); 
     float r = _dist2(_gen);
-    if (display && i%_report_every == 0) {
+    if (display > 0 && i%_report_every == 0) {
       std::printf(" %06d %.2f cur %.3Lf best %.3Lf\n", i, T, cur_dur, best_dur);
       //std::printf(" %06d %.2f dur %.3Lf cur %.3Lf best %.3Lf  (%.3f %.3f)\n", i, T, dur, cur_dur, best_dur, acc_prob, r);
       //std::printf(" %06d %.2f dur %.3Lf cur %.3Lf best %.3Lf ", i, T, dur, cur_dur, best_dur);
@@ -130,15 +163,16 @@ PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float 
     }
     if (r<=acc_prob) {
       cur_dur = dur;
+      cur_seq = new_seq;
       if (cur_dur < best_dur) {
 	best_dur = cur_dur;
 	_best_seq = std::vector<int>(cur_seq);
       }
     }
-    else
-      mutate(cur_seq, i2, i1); // swap back
-      
+    //    else
+    //      mutate(cur_seq, i2, i1); // swap back
   }
+
   for (int _s:_best_seq)
     best_seq.push_back(_s);
   return best_dur;

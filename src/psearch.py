@@ -19,16 +19,18 @@ def info(title):
 
 #def run_sa(idx, scen, start_seq, epochs):#, queue):
 def run_sa(args):#, queue):
-    idx, scen, start_seq, epochs, queue = args
+    idx, scen, start_seq, epochs, T0, queue = args
     #info('run_sa')
     #print(f'{idx} starting')# on: {scen.name} {epochs:.1e}')
-    #res = pm_sa.search(scen.drone, scen.targets, start_seq, epochs=epochs, display=0, use_native=True)
-    res = pm_nc.search_sa(scen.drone, scen.targets, start_seq, epochs, display=0)
+    if 1: ## Python sa with C++ cost evaluation
+        res = pm_sa.search(scen.drone, scen.targets, start_seq, epochs=epochs, display=0, use_native=True)
+    else: ## C++ sa (with C++ cost evaluation)
+        res = pm_nc.search_sa(scen.drone, scen.targets, start_seq, epochs, display=0, T0=T0)
     print(f'{idx:03d} -> {res[0].flight_duration():.3f} s')
     #queue.task_done()
     queue.put((res[0].flight_duration(), res[1]))
 
-def main(scen_filename, epochs, nruns, parallel, save=False):
+def main(scen_filename, epochs, nruns, parallel, save=False, T0=2.):
     print(f'Running {nruns} runs of {epochs:.1e} epochs on {scen_filename}')
     print(f'Number of cpu: {mp.cpu_count()} Number of parallel tasks {parallel}')
     #info('main line')
@@ -38,7 +40,7 @@ def main(scen_filename, epochs, nruns, parallel, save=False):
     pool = mp.Pool(parallel)
     m = mp.Manager()
     queue = m.Queue()
-    _d = [(_i, scen, _s, epochs, queue) for _i, _s in enumerate(start_seqs)]
+    _d = [(_i, scen, _s, epochs, T0, queue) for _i, _s in enumerate(start_seqs)]
     pool.map(run_sa, _d)
     pool.close()
     pool.join()
@@ -61,10 +63,11 @@ if __name__ == '__main__':
     parser.add_argument('scen_filename')
     parser.add_argument('-e', '--epochs', help='epochs', default='1k')
     parser.add_argument('-t', '--nb_run', help='nb runs', type=int, default=8)
+    parser.add_argument('-f', '--T0', type=float, default=2., help='start temperature for sa')
     parser.add_argument('-J', '--parallel', help='nb runs', type=int, default=mp.cpu_count())
     parser.add_argument('-w', '--overwrite', help='overwrite', action='store_true')
     #parser.add_argument('-s', '--scen_filename', help='scenario filename')
     args = parser.parse_args()
     epochs = pmu.parse_with_prefix(args.epochs)
-    main(args.scen_filename, epochs, args.nb_run, args.parallel, args.overwrite)
+    main(args.scen_filename, epochs, args.nb_run, args.parallel, args.overwrite, args.T0)
     

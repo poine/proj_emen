@@ -55,6 +55,9 @@ def search(drone, targets, start_seq=None, epochs=1000, debug=False, Tf=None, di
     best_drone, cur_drone = start_drone, start_drone
     best_seq = cur_seq = start_seq
     best_dur = cur_dur = start_dur
+    if display>0:
+        print(f'  start solution')
+        _print_sol(0, T0, best_dur, cur_dur, cur_seq)
     if display>1: last_display = time.perf_counter()
     if Tf is None: Tf = lambda i: _f1(T0, 0, 1e-2, 0.8*epochs, i)
     if debug: all_durs, cur_durs, Paccept, max_durs = (np.zeros(epochs) for i in range(4))
