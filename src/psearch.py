@@ -3,7 +3,7 @@
 '''
   Unit test for multiprocessing
 '''
-import argparse, os, time, numpy as np, matplotlib.pyplot as plt
+import argparse, os, time, datetime, numpy as np, matplotlib.pyplot as plt
 import multiprocessing as mp
 import pdb
 
@@ -23,16 +23,16 @@ def run_sa(args):#, queue):
     #info('run_sa')
     #print(f'{idx} starting')# on: {scen.name} {epochs:.1e}')
     res = pm_sa.search(scen.drone, scen.targets, start_seq, epochs=epochs, display=0, use_native=True)
-    print(f'{idx} done: {res[0].flight_duration():.3f} s')
+    print(f'{idx:03d} -> {res[0].flight_duration():.3f} s')
     #queue.task_done()
     queue.put((res[0].flight_duration(), res[1]))
 
-def main(filename, epochs, nruns, save=False):
-    print(f'Running {nruns} runs of {epochs:.1e} epochs on {filename}')
+def main(scen_filename, epochs, nruns, save=False):
+    print(f'Running {nruns} runs of {epochs:.1e} epochs on {scen_filename}')
     print(f'Number of cpu: {mp.cpu_count()}')
     #info('main line')
     _start = time.perf_counter()
-    scen = pmu.Scenario(filename=filename)
+    scen = pmu.Scenario(filename=scen_filename)
     start_seqs = [np.random.permutation(scen.targets).tolist() for _i in range(nruns)]
     pool = mp.Pool(mp.cpu_count())
     m = mp.Manager()
@@ -42,7 +42,7 @@ def main(filename, epochs, nruns, save=False):
     pool.close()
     pool.join()
     _end = time.perf_counter()
-    print(f'search took {_end-_start:.1f} s')
+    print(f'computed search set in {datetime.timedelta(seconds=_end-_start)}')
     res = [queue.get() for i in range(nruns)]
     _durs, _seqs = [_r[0] for _r in res], [_r[1] for _r in res]
     with np.printoptions(precision=2, suppress=True):
@@ -52,7 +52,7 @@ def main(filename, epochs, nruns, save=False):
     print(f'best : {best_dur}')
     if save:
         scen.add_solution('best', best_dur, best_seqn)
-        scen.save('/tmp/foo')#scen_filename) 
+        scen.save(scen_filename) 
  
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run simulated annealing in parallel.')
