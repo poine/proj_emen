@@ -26,6 +26,13 @@ def parse_with_prefix(_s):
         elif _s.endswith('g'): res = int(float(_s[:-1])*1e9)
     return res
 
+# formating
+def mmmm(_v): return np.min(_v), np.max(_v), np.mean(_v), np.median(_v)
+def fmt_mmmm(_v):
+    with np.printoptions(precision=2, suppress=True):
+        return 'min/max: {} / {}  mean: {} med: {}'.format(*[np.array2string(__v) for __v in mmmm(_v)])
+
+
 #
 # Some plotting
 #
