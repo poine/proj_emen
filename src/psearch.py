@@ -22,14 +22,15 @@ def run_sa(args):#, queue):
     idx, scen, start_seq, epochs, queue = args
     #info('run_sa')
     #print(f'{idx} starting')# on: {scen.name} {epochs:.1e}')
-    res = pm_sa.search(scen.drone, scen.targets, start_seq, epochs=epochs, display=0, use_native=True)
+    #res = pm_sa.search(scen.drone, scen.targets, start_seq, epochs=epochs, display=0, use_native=True)
+    res = pm_nc.search_sa(scen.drone, scen.targets, start_seq, epochs, display=0)
     print(f'{idx:03d} -> {res[0].flight_duration():.3f} s')
     #queue.task_done()
     queue.put((res[0].flight_duration(), res[1]))
 
 def main(scen_filename, epochs, nruns, parallel, save=False):
     print(f'Running {nruns} runs of {epochs:.1e} epochs on {scen_filename}')
-    print(f'Number of cpu: {mp.cpu_count()}')
+    print(f'Number of cpu: {mp.cpu_count()} Number of parallel tasks {parallel}')
     #info('main line')
     _start = time.time()
     scen = pmu.Scenario(filename=scen_filename)

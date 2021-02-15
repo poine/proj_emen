@@ -12,9 +12,9 @@ class Drone {
  public:
   Drone();
   PmType flight_duration();
+  PmType get_last_leg_start_time();
   void reset(PmType x0, PmType y0, float v);
   void get_last_leg_start_pos(PmType* x, PmType* y);
-  //PmType get_last_leg_start_time();
   void add_leg(float psi, PmType dt);
 
   std::vector<float> get_psis() { return _psi;} 
@@ -51,11 +51,11 @@ class Solver {
   Solver();
   //~Solver();
   bool init(PmType* dp, float dv, std::vector<PmType> tx, std::vector<PmType> ty, std::vector<float> tv, std::vector<float> th);
-  PmType search_sa(std::vector<int> start_seq, unsigned int epochs, float T0);
+  PmType search_sa(std::vector<int> start_seq, unsigned int nepoch, float T0, std::vector<int> &best_seq, int display);
+  PmType search_exhaustive(std::vector<int> &best_seq);
   PmType run_sequence(std::vector<int> seq);
   PmType run_sequence_threshold(std::vector<int> seq, PmType max_t);
-  PmType run_exhaustive(std::vector<int> &best_seq);
-  PmType run_random(std::vector<int> &seq);
+  PmType run_sequence_random(std::vector<int> &seq);
   void solve_1(float* psi, PmType* dt, Target target);
   std::vector<float> get_psis() { return _drone.get_psis();} 
  private:

@@ -27,9 +27,12 @@ def main(filename, method='sa2', max_epoch=10000, sol_name=None, save_filename=N
     elif method == 'sa':  # simulated annealing
         start_seq = scen.solution_by_name(start_sol_name)[2] if start_sol_name is not None else None
         _drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=max_epoch, display=2, T0=T0, use_native=False, start_seq=start_seq)
-    elif method == 'sa2':  # simulated annealing native
+    elif method == 'sa2':  # simulated annealing hybrid native
         start_seq = scen.solution_by_name(start_sol_name)[2] if start_sol_name is not None else None
         _drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=max_epoch, display=2, T0=T0, use_native=True, start_seq=start_seq)
+    elif method == 'sa3':  # simulated annealing full native
+        start_seq = scen.solution_by_name(start_sol_name)[2] if start_sol_name is not None else None
+        _drone, _seq = pm_nc.search_sa(scen.drone, scen.targets, start_seq, max_epoch, T0)
     else: print('unknown search method')
     _end = time.perf_counter()
     cpu_dur = _end-_start; eval_per_sec = _neval/cpu_dur

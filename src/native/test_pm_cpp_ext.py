@@ -42,7 +42,7 @@ def test1(filename = '../../data/scenario_60_6.yaml'):
     print(f'Test passed: {passed}')
 
 # hunting the complex root bug
-def test11(filename = '../../data/scen_7820/1.yaml'):#'../../data/scenario_120_2_2.yaml'):
+def test11(filename = '../../data/scen_120/1.yaml'):#'../../data/scenario_7820_2_2.yaml'):
     scen = pmu.Scenario(filename=filename)
     s = pm_cpp_ext.Solver(scen.drone, scen.targets)
     for i in range(1):
@@ -105,7 +105,7 @@ def test22(filename = '../../data/scenario_60_6.yaml'):
 # Profiling: x200?
 #
 # 
-def test3(filename = '../../data/scen_7820/9.yaml', ntest=1000):
+def test3(filename = '../../data/scen_120/9.yaml', ntest=1000): # scen_7820/9.yaml
     scen = pmu.Scenario(filename=filename)
     s = pm_cpp_ext.Solver(scen.drone, scen.targets)
     seq = [_s.name-1 for _s in scen.targets]
@@ -144,10 +144,21 @@ def test4(filename = '../../data/scenario_9_6.yaml'):
     print(best_seq)
     print(f'search in C took {dt:.3f}s ({ips:.2e} cost_evals/s)')
 
+def test5(filename = '../../data/scen_small/scenario_9_6.yaml', nepoch=int(10)):
+    scen = pmu.Scenario(filename=filename)
+    s = pm_cpp_ext.Solver(scen.drone, scen.targets)
+    start_seq = np.random.permutation(scen.targets).tolist()
+    _start_seq = [_s.name-1 for _s in start_seq]
+    _start = time.perf_counter()
+    best_dur, best_seq = s.search_sa(_start_seq, nepoch, T0=1.)
+    _end = time.perf_counter()
+    dt = _end-_start
+    print(f'search took {dt:.0f}s best dur {best_dur:.3f}')
     
 #test1()
 #test11()  # hunting complex root bug: float overflow
 #test2('../../data/scen_60/1.yaml')  # check random permutations
 #test22()
-test3()   # profiling cost evaluation
+#test3()   # profiling cost evaluation
 #test4()   # exhaustive search
+test5()

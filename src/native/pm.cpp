@@ -2,6 +2,7 @@
 #include <math.h>
 #include <algorithm>
 #include <string>
+#include <random>
 
 #include "pm/pm.h"
 
@@ -21,8 +22,8 @@ void Drone::get_last_leg_start_pos(PmType* x, PmType* y) {
   *x = _x.back(); *y = _y.back();
 }
 
-//PmType Drone::get_last_leg_start_time() { return _ts.back(); }
-PmType Drone::flight_duration() { return _ts.back(); }
+PmType Drone::get_last_leg_start_time() { return _ts.back(); }
+PmType Drone::flight_duration() { return get_last_leg_start_time(); }
 
 void Drone::add_leg(float psi, PmType dt) {
   _ts.push_back(_ts.back()+dt);
@@ -62,8 +63,103 @@ bool Solver::init(PmType* dp, float dv, std::vector<PmType> tx, std::vector<PmTy
   return true;
 }
 
+float Tf(unsigned int epoch, float T0, float T1, unsigned int max_epoch) {
+  float T; 
+  if (epoch < max_epoch)
+    T = T0 + (T1-T0)*epoch/max_epoch;
+  else
+    T = T1;
+  return T;
+}
 
-PmType Solver::search_sa(std::vector<int> start_seq, unsigned int epochs, float T0) {
+
+void _print_seq(std::vector<int>& seq) {
+  for (int _s:seq)
+    std::printf("%d ", _s);
+  std::printf("\n");
+}
+
+
+void mutate(std::vector<int> &seq, int i1, int i2) {
+  //std::printf("before "); _print_seq(seq);
+  //std::printf("swaping %d %d\n", i1, i2);
+  int tmp = seq[i1];
+  seq[i1] = seq[i2];
+  seq[i2] = tmp;
+  //std::printf("after  "); _print_seq(seq);
+}
+
+bool _check(std::vector<int>& seq) {
+  int cnt[seq.size()];
+  for (unsigned int i=0; i<seq.size(); i++) cnt[i]=0;
+  for (int s:seq) {
+    cnt[s] += 1;
+  }
+  for (int s:cnt)
+    std::printf("%d ",s);
+  std::printf("\n");
+  return true;
+}
+
+PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float T0, std::vector<int> &best_seq, int display) {
+  int _report_every = 1000;
+  //std::printf("  start ");_print_seq(start_seq);
+  PmType best_dur = run_sequence(start_seq);
+  std::vector<int> _best_seq = start_seq;
+  PmType cur_dur = best_dur;
+  std::vector<int> cur_seq = std::vector<int>(start_seq);
+
+  std::default_random_engine _gen;
+  std::uniform_int_distribution<int> _dist(0,start_seq.size()-1);
+  std::uniform_real_distribution<float> _dist2(0.,1.);
+
+  for (unsigned int i=0; i<nepoch; i++) {
+    int i1 = _dist(_gen), i2 = _dist(_gen);
+    while (i1==i2) {i2 = _dist(_gen);}
+    mutate(cur_seq, i1, i2);
+    //_check(cur_seq);
+    PmType dur = run_sequence(cur_seq);
+    float T = Tf(i, T0, 1e-2, int(0.9*nepoch));
+    float acc_prob = exp(-(dur-cur_dur)/T); 
+    float r = _dist2(_gen);
+    if (display && i%_report_every == 0) {
+      std::printf(" %06d %.2f dur %.3Lf cur %.3Lf best %.3Lf  (%.3f %.3f)\n", i, T, dur, cur_dur, best_dur, acc_prob, r);
+      //std::printf(" %06d %.2f dur %.3Lf cur %.3Lf best %.3Lf ", i, T, dur, cur_dur, best_dur);
+      //_print_seq(cur_seq);
+    }
+    if (r<=acc_prob) {
+      cur_dur = dur;
+      if (cur_dur < best_dur) {
+	best_dur = cur_dur;
+	_best_seq = std::vector<int>(cur_seq);
+      }
+    }
+    else
+      mutate(cur_seq, i2, i1); // swap back
+      
+  }
+  for (int _s:_best_seq)
+    best_seq.push_back(_s);
+  return best_dur;
+}
+
+
+PmType Solver::search_exhaustive(std::vector<int> &best_seq) {
+  std::vector<int> seq;
+  for (unsigned int i=0; i<_targets.size(); i++)
+    seq.push_back(i);
+  PmType best_cost = std::numeric_limits<PmType>::infinity();
+  std::vector<int> _best_seq;
+  do {
+      PmType cost = run_sequence(seq);
+      if (cost < best_cost) {
+	best_cost = cost;
+	_best_seq = std::vector<int>(seq);
+      }
+    } while(std::next_permutation(seq.begin(), seq.end())); 
+  for (int _s:_best_seq)
+    best_seq.push_back(_s);
+  return best_cost;
 }
 
 
@@ -146,27 +242,7 @@ PmType Solver::run_sequence_threshold(std::vector<int> seq, PmType max_t) {
 }
 
 
-
-PmType Solver::run_exhaustive(std::vector<int> &best_seq) {
-  std::vector<int> seq;
-  for (unsigned int i=0; i<_targets.size(); i++)
-    seq.push_back(i);
-  PmType best_cost = std::numeric_limits<PmType>::infinity();
-  std::vector<int> _best_seq;
-  do {
-      PmType cost = run_sequence(seq);
-      if (cost < best_cost) {
-	best_cost = cost;
-	_best_seq = std::vector<int>(seq);
-      }
-    } while(std::next_permutation(seq.begin(), seq.end())); 
-  for (int _s:_best_seq)
-    best_seq.push_back(_s);
-  return best_cost;
-}
-
-
-PmType Solver::run_random(std::vector<int> &seq) {
+PmType Solver::run_sequence_random(std::vector<int> &seq) {
   for (unsigned int i=0; i<_targets.size(); i++)
     seq.push_back(i);
   std::random_shuffle( seq.begin(), seq.end() );

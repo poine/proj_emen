@@ -19,10 +19,11 @@ cdef extern from "pm/pm.h":
     cdef cppclass c_Solver "Solver":
         c_Solver()
         bool init(PmType* dp, float dv, vector[PmType] tx, vector[PmType] ty, vector[float] tv, vector[float] th)
+        PmType search_sa(vector[int] start_seq, unsigned int nepoch, float T0, vector[int] best_seq, int display)
+        PmType search_exhaustive(vector[int] &best_seq)
         PmType run_sequence(vector[int] seq)
         PmType run_sequence_threshold(vector[int] seq, PmType max_t)
-        PmType run_exhaustive(vector[int] &best_seq)
-        PmType run_random(vector[int] &best_seq)
+        PmType run_sequence_random(vector[int] &best_seq)
         vector[float] get_psis()
 
 cdef class Solver:
@@ -50,6 +51,17 @@ cdef class Solver:
             th.push_back(_t.psi)
         self.thisptr.init(dp, dv, tx, ty, tv, th)
 
+    def search_sa(self, start_seq, nepoch, T0=1., display=0):
+        cdef vector[int] _start_seq
+        for _s in start_seq: _start_seq.push_back(_s)
+        cdef vector[int] _best_seq
+        best_dur = self.thisptr.search_sa(_start_seq, nepoch, T0, _best_seq, display)
+        return best_dur, [_s for _s in _best_seq]
+        
+    def search_exhaustive(self):
+        cdef vector[int] _best_seq
+        best_dur = self.thisptr.search_exhaustive(_best_seq)
+        return best_dur, [_s for _s in _best_seq]
 
     def run_sequence(self, seq):
         cdef vector[int] _seq
@@ -61,14 +73,9 @@ cdef class Solver:
         for _s in seq: _seq.push_back(_s)
         return self.thisptr.run_sequence_threshold(_seq, max_t)
 
-    def run_exhaustive(self):
-        cdef vector[int] _best_seq
-        best_dur = self.thisptr.run_exhaustive(_best_seq)
-        return best_dur, [_s for _s in _best_seq]
-
-    def run_random(self):
+    def run_sequence_random(self):
         cdef vector[int] _seq
-        _dur = self.thisptr.run_random(_seq)
+        _dur = self.thisptr.run_sequence_random(_seq)
         return _dur, [_s for _s in _seq]
         
     def debug(self):
