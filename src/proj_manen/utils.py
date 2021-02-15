@@ -498,6 +498,8 @@ class ScenarioFactory:
                lambda: make_random_scenario(ntarg=480, tp=_circle(300),  th=_normal(0., 0.), tv=_normal(5., 0.))],
         4809: ['scenario_480_9.yaml', # grid 2
                 lambda: make_random_scenario(ntarg=480, dp0=(-10,-10), tp={'kind':'grid', 'nr':22, 'd':15}, th=_normal(np.deg2rad(20.), 0.), tv=_normal(5., 0.))],
+        48091: ['scenario_48_9_1.yaml', # grid 2 with noise
+               lambda: make_random_scenario(ntarg=480, dp0=(-10,-10), tp={'kind':'grid', 'nr':22, 'd':15}, th=_normal(np.deg2rad(20.), np.deg2rad(10.)), tv=_normal(5., 0.5))],
 
         9601: ['scenario_960_1.yaml', # 960 targets, defaults: uniform law for pos and heading, normal law for speed
               lambda: make_random_scenario(ntarg=960, tp={'kind':'uniform', 'low':-250, 'high':250})],
