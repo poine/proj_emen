@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <random>
+#include <list>
 
 #include "pm/pm.h"
 
@@ -74,8 +75,7 @@ float Tf(unsigned int epoch, float T0, float T1, unsigned int max_epoch) {
 
 
 void _print_seq(std::vector<int>& seq) {
-  for (int _s:seq)
-    std::printf("%d ", _s);
+  for (int _s:seq) std::printf("%d ", _s);
   std::printf("\n");
 }
 
@@ -115,22 +115,23 @@ void mutate4(std::vector<int> &seq1, int i1, int i2, std::vector<int> &seq2) {
   //std::printf("after  "); _print_seq(seq);
 }
 
-
+void mutate5(std::deque<int> &seq, int i1, int i2) {
+  int tmp= seq[i1];
+  seq.erase (seq.begin()+i1);
+  seq.insert(seq.begin()+i2, tmp);
+}
 
 
 bool _check(std::vector<int>& seq) {
   int cnt[seq.size()];
   for (unsigned int i=0; i<seq.size(); i++) cnt[i]=0;
-  for (int s:seq) {
-    cnt[s] += 1;
-  }
-  for (int s:cnt)
-    std::printf("%d ",s);
+  for (int i:seq) cnt[i] += 1;
+  for (int i:cnt) std::printf("%d ",i);
   std::printf("\n");
   return true;
 }
 
-
+//#define USE_VECTOR 
 
 PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float T0, std::vector<int> &best_seq, int display) {
   if (display > 0) { std::printf("running simulated annealing with %ld targets for %d epochs\n", start_seq.size(), nepoch); }
@@ -140,18 +141,25 @@ PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float 
   std::vector<int> _best_seq = start_seq;
   PmType cur_dur = best_dur;
   std::vector<int> cur_seq = std::vector<int>(start_seq);
+  std::deque<int> __cur_seq;
+  for (int _s:start_seq) __cur_seq.push_back(_s);
 
   std::default_random_engine _gen;
-  std::uniform_int_distribution<int> _dist(0,start_seq.size()-1);
+  std::uniform_int_distribution<int> _dist1(0,start_seq.size()-1);
   std::uniform_real_distribution<float> _dist2(0.,1.);
 
   for (unsigned int i=0; i<nepoch; i++) {
-    int i1 = _dist(_gen), i2 = _dist(_gen);
-    while (i1==i2) {i2 = _dist(_gen);}
+    int i1 = _dist1(_gen), i2 = _dist1(_gen);
+    while (i1==i2) {i2 = _dist1(_gen);}
+#if defined USE_VECTOR
     std::vector<int> new_seq = std::vector<int>(cur_seq);
     mutate4(cur_seq, i1, i2, new_seq);
     //_check(cur_seq);
     PmType dur = run_sequence(new_seq);
+#else
+    mutate5(__cur_seq, i1, i2);
+    PmType dur = run_sequence(__cur_seq);
+#endif
     float T = Tf(i, T0, 1e-2, int(0.9*nepoch));
     float acc_prob = exp(-(dur-cur_dur)/T); 
     float r = _dist2(_gen);
@@ -163,14 +171,23 @@ PmType Solver::search_sa(std::vector<int> start_seq, unsigned int nepoch, float 
     }
     if (r<=acc_prob) {
       cur_dur = dur;
+#if defined USE_VECTOR
       cur_seq = new_seq;
+#endif
       if (cur_dur < best_dur) {
 	best_dur = cur_dur;
+#if defined USE_VECTOR
 	_best_seq = std::vector<int>(cur_seq);
+#else
+	_best_seq.clear();
+	for (int _s:__cur_seq) best_seq.push_back(_s);
+#endif
       }
     }
-    //    else
-    //      mutate(cur_seq, i2, i1); // swap back
+#if not defined USE_VECTOR
+    else
+      mutate5(__cur_seq, i2, i1); // swap back
+#endif
   }
 
   for (int _s:_best_seq)
@@ -264,7 +281,16 @@ PmType Solver::run_sequence(std::vector<int> seq) {
   return _drone.flight_duration();
 }
 
-
+PmType Solver::run_sequence(std::deque<int> seq) {
+  _drone.reset(_drone.get_xs().front(), _drone.get_ys().front(), _drone._v);
+  for (int tid:seq) {
+    float psi; PmType dt;
+    solve_1(&psi, &dt, _targets[tid]);
+    _drone.add_leg(psi, dt);
+  }
+  return _drone.flight_duration();
+}
+  
 PmType Solver::run_sequence_threshold(std::vector<int> seq, PmType max_t) {
   _drone.reset(_drone.get_xs().front(), _drone.get_ys().front(), _drone._v);
   for (int tid:seq) {
