@@ -25,7 +25,7 @@ def animate_solutions(scen, names, tf=1., window_title=None, _size=3.84):
     titles = [f'{window_title}/{_n}' for _n in names]
     return animate_multi(fig, axes, drones, seqs, titles, tf=tf)
 
-# make a side-by-side animation with several scenarios
+# make a side-by-side animation with several scenarios (and one solution)
 def animate_scenarios(scens, sol_names, tf=1., _size=3.84):
     nr, nc = len(scens), 1
     fig = plt.figure(tight_layout=True, figsize=[_size*nc, _size*nr])

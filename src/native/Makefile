@@ -10,10 +10,11 @@ pm.o: pm.cpp pm/pm.h
 libpm.so: pm.o
 	g++ -shared pm.o -o libpm.so
 
-
+# This changes names... sad...
 pm_cpp_ext.cpython-36m-x86_64-linux-gnu.so: pm_cpp_ext.pyx setup_pm_cpp_ext.py libpm.so
 #pm_cpp_ext.so: pm_cpp_ext.pyx setup_pm_cpp_ext.py libpm.so
 	python3 setup_pm_cpp_ext.py build_ext --inplace
+	cd ..; ln -sf native/pm_cpp_ext.cpython-36m-x86_64-linux-gnu.so .
 
 test: pm_cpp_ext.cpython-36m-x86_64-linux-gnu.so
 	LD_LIBRARY_PATH=. ./test_pm_cpp_ext.py

@@ -9,7 +9,7 @@ import pdb
 
 import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma
 
-def main(scen_filenames, sol_names,  anim=False, tf=1., save_anim=False, save_filename=None):
+def main(scen_filenames, sol_names,  anim=False, tf=1., save_anim=False, save_filename=None, scale=1.):
     #pdb.set_trace()
     scens = [pmu.Scenario(filename=_f) for _f in scen_filenames]
     if len(scens) > 1:
@@ -20,7 +20,7 @@ def main(scen_filenames, sol_names,  anim=False, tf=1., save_anim=False, save_fi
             pmu.plot_scenario(scen, filename)
         else:
             if anim:
-                anim = pma.animate_solutions(scen, sol_names.split(','), tf, scen.name)
+                anim = pma.animate_solutions(scen, sol_names.split(','), tf, scen.name, scale*3.84)
             else :
                 pmu.plot_solutions(scen, sol_names, filename)
     plt.show()
@@ -35,7 +35,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--sol_name', help='name of solution to display')
     parser.add_argument('-a', '--anim', help='show animation', action="store_true")
     parser.add_argument('-f', '--time_factor', help='time factor', type=float, default=1.)
-    parser.add_argument('-s', '--save', help='save animation', action="store_true")
+    parser.add_argument('-w', '--save', help='save animation', action="store_true")
     parser.add_argument('-o', '--out', help='name of file to save animation (.gif, .webp or .mp4)', default="/tmp/anim.webp")
+    parser.add_argument('-s', '--scale', help='scale of the figure', type=float, default=1.)
     args = parser.parse_args()
-    main(args.filename, args.sol_name, args.anim, args.time_factor, args.save, args.out)
+    main(args.filename, args.sol_name, args.anim, args.time_factor, args.save, args.out, args.scale)

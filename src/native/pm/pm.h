@@ -2,6 +2,7 @@
 #define PM__PM_H
 
 #include <vector>
+#include <deque>
 
 // change pm_cpp_ext.pyx accordingly
 typedef long double PmType; // fails at 15640
@@ -54,6 +55,7 @@ class Solver {
   PmType search_sa(std::vector<int> start_seq, unsigned int nepoch, float T0, std::vector<int> &best_seq, int display);
   PmType search_exhaustive(std::vector<int> &best_seq);
   PmType run_sequence(std::vector<int> seq);
+  PmType run_sequence(std::deque<int> seq);
   PmType run_sequence_threshold(std::vector<int> seq, PmType max_t);
   PmType run_sequence_random(std::vector<int> &seq);
   void solve_1(float* psi, PmType* dt, Target target);

@@ -38,13 +38,14 @@ def main(filename, method='sa3', max_epoch=10000, sol_name=None, save_filename=N
     cpu_dur = _end-_start; eval_per_sec = _neval/cpu_dur
     print(f'{sol_name}: {_drone.flight_duration():.2f}s (computed in {datetime.timedelta(seconds=cpu_dur)} h:m:s, {eval_per_sec:.0f} ev/s)')
     
-    # check
-    _drone2, _dur2 = pm.intercept_sequence_copy(scen.drone, _seq)
-    if _dur2 != _drone2.flight_duration() or\
-        not np.allclose([_dur2], [_drone.flight_duration()]):  # python and C did not recompute same duration for sequence 
-        print('#### search.py: check failed FIXME ####')
-        print(f'{_dur2} {_drone.flight_duration()}')
-        pdb.set_trace()
+    check=False # FIXME: move this to unit test
+    if check:
+        _drone2, _dur2 = pm.intercept_sequence_copy(scen.drone, _seq)
+        if _dur2 != _drone2.flight_duration() or\
+           not np.allclose([_dur2], [_drone.flight_duration()]):  # python and C did not recompute same duration for sequence 
+            print('#### search.py: check failed FIXME ####')
+            print(f'{_dur2} {_drone.flight_duration()}')
+            pdb.set_trace()
     
     scen.add_solution(sol_name, _drone.flight_duration(), _seq)
     if save_filename is not None:
