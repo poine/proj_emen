@@ -19,7 +19,7 @@ def _display_ep(_ep, _costs, cpu_elapsed):
     _min, _med = np.min(_costs), np.median(_costs)
     print(f'{_ep} epochs, min {_min:.3f}s, cpu {datetime.timedelta(seconds=cpu_elapsed)} (h:m:s)')
     
-def create_search_set(scen_filename, nb_searches, epochs, cache_filename, T0=2.):
+def create_search_set(scen_filename, nb_searches, epochs, cache_filename, method, T0=2.):
     time_tags = []
     time_tags.append(time.perf_counter())
     scen = pmu.Scenario(filename=scen_filename)
@@ -28,8 +28,12 @@ def create_search_set(scen_filename, nb_searches, epochs, cache_filename, T0=2.)
         print(f'-{_ep:e} epochs')
         _drones, _seqs, _costs = [],[],[]
         for i in range(nb_searches):
-            #_drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=_ep, display=0)
-            _drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=_ep, display=0, T0=T0, use_native=True)
+            if method=='sa':
+                _drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=_ep, display=0)
+            elif method=='sa2':
+                _drone, _seq = pm_sa.search(scen.drone, scen.targets, epochs=_ep, display=0, T0=T0, use_native=True)
+            elif method=='sa3':
+                _drone, _seq = pm_nc.search_sa(scen.drone, scen.targets, start_seq=None, nepoch=_ep, display=0, T0=T0)
             _drones.append(_drone); _seqs.append(_seq)
             _costs.append(_drone.flight_duration())
             _display_run(_ep, i, nb_searches, _costs)
@@ -83,15 +87,13 @@ def merge_search_set(d1, d2):
     epochs = np.append(_e1, _e2)
     cost_by_ep = np.append(_cbe1, _cbe2, axis=0)
     seq_by_ep = np.append(_sbe1, _sbe2, axis=0)
-    #pdb.set_trace()
     return cost_by_ep, seq_by_ep, epochs
 
-
-def main(set_filenames, create, analyze, show, scen_filename, nb_searches, epochs, overwrite, add_best, add_good):
+def main(set_filenames, create, analyze, show, scen_filename, nb_searches, epochs, overwrite, add_best, add_good, method):
     if create:
         print(f'## About to run {nb_searches:e} searches for {epochs} epochs on {scen_filename}')
         print(f'## results will be stored in {set_filenames[0]}')
-        data = create_search_set(scen_filename, nb_searches, epochs, set_filenames[0])
+        data = create_search_set(scen_filename, nb_searches, epochs, set_filenames[0], method)
     else:
         data = load_search_set(cache_filename=set_filenames[0])
         for sf in set_filenames[1:]:
@@ -112,6 +114,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--scen_filename', help='scenario filename')
     parser.add_argument('-t', '--nb_run', help='nb runs', type=int)
     parser.add_argument('-e', '--epochs', help='epochs')
+    parser.add_argument('-m', '--method', default='sa3', help='search method: sa, sa2, sa3')
     parser.add_argument('-a', '--analyze', help='analyze', action='store_true')
     parser.add_argument('-b', '--add_best', help='edit', action='store_true')
     parser.add_argument('-g', '--add_good', help='edit', action='store_true')
@@ -119,4 +122,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     epochs = [pmu.parse_with_prefix(_) for _ in args.epochs.split(',')] if args.epochs is not None else [] # example: 5e3,1e4 
-    main(args.set_filename, args.create, args.analyze, args.show, args.scen_filename, args.nb_run, epochs, args.overwrite, args.add_best, args.add_good)
+    main(args.set_filename, args.create, args.analyze, args.show, args.scen_filename, args.nb_run, epochs, args.overwrite, args.add_best, args.add_good, args.method)

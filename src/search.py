@@ -10,10 +10,11 @@ import pdb
 import proj_manen as pm, proj_manen.utils as pmu, proj_manen.simulated_annealing as pm_sa
 
 import proj_manen.native_core as pm_nc
+import proj_manen.scenarios as pm_sc
 
 
 def main(filename, method='sa3', max_epoch=10000, sol_name=None, save_filename=None, overwrite=False, show=False, T0=2., start_sol_name=None):
-    scen = pmu.Scenario(filename=filename)
+    scen = pm_sc.Scenario(filename=filename)
     _start = time.perf_counter()
     _neval = max_epoch
     if method == 'ex':    # exhaustive

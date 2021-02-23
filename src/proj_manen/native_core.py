@@ -1,4 +1,5 @@
 import copy, numpy as np
+import pdb
 
 '''
 Some glue for the cython c++ interface
@@ -10,7 +11,8 @@ except ImportError:
     print('')
     print('## WARNING: proj_manen.native_core: failed to import native library.')
     print('    you will not be able to use the C++ backend which is needed for increased performances.')
-    print('    See the documentation for how to build and use it.')
+    print('    See the documentation for how to build and use it (or try:')
+    print('    cd native; make )')
     print('')
 
 

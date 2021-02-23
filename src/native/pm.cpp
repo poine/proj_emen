@@ -304,8 +304,7 @@ PmType Solver::run_sequence_threshold(std::vector<int> seq, PmType max_t) {
 
 
 PmType Solver::run_sequence_random(std::vector<int> &seq) {
-  for (unsigned int i=0; i<_targets.size(); i++)
-    seq.push_back(i);
+  for (unsigned int i=0; i<_targets.size(); i++) seq.push_back(i);
   std::random_shuffle( seq.begin(), seq.end() );
   return run_sequence(seq);
 }

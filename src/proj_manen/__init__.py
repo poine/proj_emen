@@ -20,8 +20,8 @@ class Actor: # a moving actor (target): cst speed, cts heading
     def get_vel(self, t): return self.v, self.psi
 
 class Drone(Actor): # piecewise cst heading
-    def __init__(self, p0, v0, h0):
-        Actor.__init__(self, p0[0], p0[1], v0, h0, 'drone')
+    def __init__(self, p0, v0, h0, name='drone'):
+        Actor.__init__(self, p0[0], p0[1], v0, h0, name)
         self.clear_traj()
 
     def clear_traj(self):
@@ -52,7 +52,7 @@ class Drone(Actor): # piecewise cst heading
 def intercept_1(drone, target): # a cos(psi) + b sin(psi) = c
     delta_p0 = drone.Xs[-1] - target.get_pos(drone.flight_duration())
     if np.linalg.norm(delta_p0) < 1e-12:
-        print('###over target')
+        #print('###over target')
         return 0., 0.  # the drone is already over the target
     a, b = delta_p0[1]*drone.v, -delta_p0[0]*drone.v
     c = delta_p0[1]*target.vx-delta_p0[0]*target.vy

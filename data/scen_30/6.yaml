@@ -149,10 +149,11 @@ targets:
     v: 5.0
     h: 0.0
 
-drone:
-  p0: [25,25]
-  v: 15
-  h: 0.0
+drones:
+  0:
+    p0: [25,25]
+    v: 15
+    h: 0.0
 
 
 solutions:

@@ -7,20 +7,23 @@
 import sys, argparse, os, time, copy, numpy as np, matplotlib.pyplot as plt
 import pdb
 
-import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma
+import proj_manen as pm, proj_manen.utils as pmu, proj_manen.animations as pma, proj_manen.scenarios as pm_sc
 
 def main(scen_filenames, sol_names,  anim=False, tf=1., save_anim=False, save_filename=None, scale=1.):
     #pdb.set_trace()
-    scens = [pmu.Scenario(filename=_f) for _f in scen_filenames]
-    if len(scens) > 1:
-        anim = pma.animate_scenarios(scens, sol_names.split(','), tf)
-    else:
+    scens = [pm_sc.Scenario(filename=_f) for _f in scen_filenames]
+    if len(scens) > 1: # several scenarios
+        anim = pma.animate_multi_scen_single_sol_md(scens, sol_names, tf)
+    else:              # single scenario
         filename, scen = scen_filenames[0], scens[0]
-        if scen.nb_solutions() == 0 or sol_names is None:
+        if scen.nb_solutions() == 0 or sol_names is None:  # no solution
             pmu.plot_scenario(scen, filename)
-        else:
+        else:                                              # solutions
             if anim:
-                anim = pma.animate_solutions(scen, sol_names.split(','), tf, scen.name, scale*3.84)
+                if len(sol_names) >= 2:
+                    anim = pma.animate_solutions(scen, sol_names, tf, scen.name, scale*3.84)
+                else:
+                    anim = pma.animate_single_sol__md(scen, sol_names[0], tf, scen.name, scale*3.84)
             else :
                 pmu.plot_solutions(scen, sol_names, filename)
     plt.show()
@@ -31,7 +34,7 @@ def main(scen_filenames, sol_names,  anim=False, tf=1., save_anim=False, save_fi
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Display a scenario.')
-    parser.add_argument("filename", nargs='*')#, action='append')
+    parser.add_argument("filename", nargs='*')
     parser.add_argument('-n', '--sol_name', help='name of solution to display')
     parser.add_argument('-a', '--anim', help='show animation', action="store_true")
     parser.add_argument('-f', '--time_factor', help='time factor', type=float, default=1.)
@@ -39,4 +42,4 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--out', help='name of file to save animation (.gif, .webp or .mp4)', default="/tmp/anim.webp")
     parser.add_argument('-s', '--scale', help='scale of the figure', type=float, default=1.)
     args = parser.parse_args()
-    main(args.filename, args.sol_name, args.anim, args.time_factor, args.save, args.out, args.scale)
+    main(args.filename, args.sol_name.split(','), args.anim, args.time_factor, args.save, args.out, args.scale)
