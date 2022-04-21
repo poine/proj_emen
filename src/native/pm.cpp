@@ -1,6 +1,7 @@
 #include <iostream>
 #include <math.h>
 #include <algorithm>
+#include <vector>
 #include <string>
 #include <random>
 #include <list>
@@ -11,7 +12,6 @@
 // Drone
 //
 Drone::Drone() {}
-
 
 void Drone::reset(PmType x0, PmType y0, float v) {
   _v = v;
@@ -235,67 +235,87 @@ PmType _norm(PmType vx, PmType vy) { return sqrt(vx*vx+vy*vy); }
 PmType _scal_prod(PmType ax, PmType ay, PmType bx, PmType by) { return ax*bx+ay*by; }
 unsigned long int _fact(unsigned long int n) {return (n == 1 || n == 0) ? 1 : _fact(n - 1) * n; }
 
-void Solver::solve_1(float* psi, PmType* dt, Target target) {
+void Solver::solve_1(Drone drone, float* psi, PmType* dt, Target target) {
   PmType dx, dy, tx, ty;
-  _drone.get_last_leg_start_pos(&dx, &dy);
-  target.get_pos(_drone.flight_duration(), &tx, &ty);
+  drone.get_last_leg_start_pos(&dx, &dy);
+  target.get_pos(drone.flight_duration(), &tx, &ty);
   PmType dpx = dx-tx, dpy = dy-ty;
   PmType dn = _norm(dpx, dpy);
   if (dn<1e-12) {*dt=0.; *psi=0.; return;} // already over the target, don't bother
-  PmType a = dpy*_drone._v, b = -dpx*_drone._v;
+  PmType a = dpy*drone._v, b = -dpx*drone._v;
   PmType c = dpy*target._vx-dpx*target._vy;
   float dvx, dvy;
   if (abs(a)<1e-12) {
     float psi1 = asin(c/b);
     *psi = psi1;
-    delta_v(_drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
+    delta_v(drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
     if (_scal_prod(dvx, dvy, dpx, dpy) > 0) {
       *psi = M_PI - *psi;
-      delta_v(_drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
+      delta_v(drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
     }
   }
   else { // Yay!!! psis = 2*np.arctan(np.roots([a+c, -2*b, c-a]))
     PmType l1,l2;
     solve_quadratic(a+c, -2*b, c-a, &l1, &l2);
     *psi = 2*atan(l1);
-    delta_v(_drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
+    delta_v(drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
     if (_scal_prod(dvx, dvy, dpx, dpy) > 0) {
       *psi = 2*atan(l2);
-      delta_v(_drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
+      delta_v(drone._v, *psi, target._vx, target._vy, &dvx, &dvy);
     }
   }
   *dt = dn/_norm(dvx, dvy);
 }
 
-
 PmType Solver::run_sequence(std::vector<int> seq) {
-  _drone.reset(_drone.get_xs().front(), _drone.get_ys().front(), _drone._v);
+  return run_sequence(_drone, seq);
+}
+
+PmType Solver::run_sequence(Drone drone, std::vector<int> seq) {
+  drone.reset(drone.get_xs().front(), drone.get_ys().front(), drone._v);
   for (int tid:seq) {
     float psi; PmType dt;
-    solve_1(&psi, &dt, _targets[tid]);
+    solve_1(drone, &psi, &dt, _targets[tid]);
     //if (isnan(dt)) { std::printf("##### GOTCHA");}
-    _drone.add_leg(psi, dt);
+    drone.add_leg(psi, dt);
     //if (_drone.flight_duration() > 1e16) return _drone.flight_duration(); // abort
   }
   //std::printf("C dur %Le\n", _drone.flight_duration());
-  return _drone.flight_duration();
+  return drone.flight_duration();
 }
 
 PmType Solver::run_sequence(std::deque<int> seq) {
-  _drone.reset(_drone.get_xs().front(), _drone.get_ys().front(), _drone._v);
+  return run_sequence(_drone, seq);
+}
+
+PmType Solver::run_sequence(Drone drone, std::deque<int> seq) {
+  drone.reset(drone.get_xs().front(), drone.get_ys().front(), drone._v);
   for (int tid:seq) {
     float psi; PmType dt;
-    solve_1(&psi, &dt, _targets[tid]);
-    _drone.add_leg(psi, dt);
+    solve_1(drone, &psi, &dt, _targets[tid]);
+    drone.add_leg(psi, dt);
   }
-  return _drone.flight_duration();
+  return drone.flight_duration();
 }
-  
+
+PmType Solver::run_sequences(std::vector<Drone> drones, std::vector<std::vector<int>> seqs) {
+  std::vector<PmType> durs;
+  for(unsigned i=0; i<drones.size(); i++) {
+    Drone d = drones[i];
+    std::vector<int> s = seqs[i];
+    durs.push_back(run_sequence(d, s));
+  }
+  return *std::max_element(std::begin(durs), std::end(durs));
+}
+
+
+
+// FIXME
 PmType Solver::run_sequence_threshold(std::vector<int> seq, PmType max_t) {
   _drone.reset(_drone.get_xs().front(), _drone.get_ys().front(), _drone._v);
   for (int tid:seq) {
     float psi; PmType dt;
-    solve_1(&psi, &dt, _targets[tid]);
+    solve_1(_drone, &psi, &dt, _targets[tid]);
     _drone.add_leg(psi, dt);
     if (_drone.flight_duration() >= max_t) break;
   }

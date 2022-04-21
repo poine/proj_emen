@@ -106,7 +106,7 @@ class MyAnimation:
         self._circle_targets = [_c for _cs in self.circle_targets for _c in _cs]
         self.line_targets = [ax.add_artist(_c) for _c in self._circle_targets]
 
-    def get_extends(self, margin=10.):
+    def get_extends(self, margin=25.):
         drone_pos = np.vstack([np.array(_d.Xs) for _d in self.drones])
         #pdb.set_trace()
         #t_pos = np.vstack(np.array([_t.p0 for _t in _a.targets])

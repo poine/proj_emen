@@ -11,6 +11,7 @@ import proj_manen.utils as pm_u
 import proj_manen.scenarios as pm_sc
 import proj_manen.simulated_annealing as pm_sa
 import proj_manen.native_core as pm_nc
+import proj_manen.multi_drone as pm_md
 
 # Main function for sub processes
 def run_sa(args):
@@ -20,8 +21,12 @@ def run_sa(args):
         res = pm_sa.search(scen.drone, scen.targets, start_seq, epochs=epochs, display=0, use_native=True)
     elif method=='sa3': ## C++ sa (with C++ cost evaluation)
         res = pm_nc.search_sa(scen.drone, scen.targets, start_seq, epochs, display=0, T0=T0)
-    print(f'{idx:03d} -> {res[0].flight_duration():.3f} s')
-    queue.put((res[0].flight_duration(), res[1]))
+    elif method == 'mdsa2': ## multi drones, Python sa with C++ cost evaluation
+        res = pm_md.search(scen.drones, scen.targets, epochs, T0=T0, display=0, use_native=True)
+    if type(res[0])!=list: res[0] = [res[0]] # FIXME: make that homogeneous
+    fd = np.max([_d.flight_duration() for _d in res[0]])
+    print(f'{idx:03d} -> {fd:.3f} s')
+    queue.put((fd, res[1]))
 
 # Runs nruns simulated annealing searches over epochs epochs. Searches are handled by a pool of subprocesses,
 # parallel of them running concurrently.
@@ -55,7 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('scen_filename')
     parser.add_argument('-e', '--epochs', help='epochs', default='1k')
     parser.add_argument('-t', '--nb_run', help='nb runs', type=int, default=8)
-    parser.add_argument('-m', '--method', default='sa3', help='search method: sa, sa2, sa3')
+    parser.add_argument('-m', '--method', default='sa3', help='search method: sa, sa2, sa3, mdsa2')
     parser.add_argument('-f', '--T0', type=float, default=2., help='start temperature for sa')
     parser.add_argument('-J', '--parallel', help='nb runs', type=int, default=mp.cpu_count())
     parser.add_argument('-w', '--write', help='save best solution to scenario', action='store_true')

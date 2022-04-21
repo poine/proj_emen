@@ -18,18 +18,18 @@ class Drone {
   void get_last_leg_start_pos(PmType* x, PmType* y);
   void add_leg(float psi, PmType dt);
 
-  std::vector<float> get_psis() { return _psi;} 
+  std::vector<float>  get_psis() { return _psi;} 
   std::vector<PmType> get_xs() {return _x;}
   std::vector<PmType> get_ys() {return _y;}
   float _v;
   
  private:
+  std::vector<PmType> _ts;
   std::vector<PmType> _x;
   std::vector<PmType> _y;
   std::vector<float> _psi;
   std::vector<float> _vx;
   std::vector<float> _vy;
-  std::vector<PmType> _ts;
 };
 
 
@@ -55,10 +55,14 @@ class Solver {
   PmType search_sa(std::vector<int> start_seq, unsigned int nepoch, float T0, std::vector<int> &best_seq, int display);
   PmType search_exhaustive(std::vector<int> &best_seq);
   PmType run_sequence(std::vector<int> seq);
+  PmType run_sequence(Drone drone, std::vector<int> seq);
   PmType run_sequence(std::deque<int> seq);
+  PmType run_sequence(Drone drone, std::deque<int> seq);
+  PmType run_sequences(std::vector<Drone> drones, std::vector<std::vector<int>> seqs);//, std::vector<std::deque<int>> seqs);
+
   PmType run_sequence_threshold(std::vector<int> seq, PmType max_t);
   PmType run_sequence_random(std::vector<int> &seq);
-  void solve_1(float* psi, PmType* dt, Target target);
+  void solve_1(Drone drone, float* psi, PmType* dt, Target target);
   std::vector<float> get_psis() { return _drone.get_psis();} 
  private:
   std::vector<Target> _targets;

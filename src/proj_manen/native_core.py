@@ -11,8 +11,8 @@ except ImportError:
     print('')
     print('## WARNING: proj_manen.native_core: failed to import native library.')
     print('    you will not be able to use the C++ backend which is needed for increased performances.')
-    print('    See the documentation for how to build and use it (or try:')
-    print('    cd native; make )')
+    print('    See the documentation for how to build and use it')
+    print('    (or try: cd native; make )')
     print('')
 
 
@@ -33,3 +33,5 @@ def search_sa(drone, targets, start_seq, nepoch, T0=2., display=1):
     best_seq = [targets[_i] for _i in _best_seq]
     return drone, best_seq
     
+def search_sa_md(drones, targets, start_seq, nepoch, T0=2., display=1):
+    pass
